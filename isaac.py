@@ -14,9 +14,37 @@ import scipy.interpolate as interp
 import warnings
 import glob
 import os
+import datetime
 
 self_dir = os.path.dirname(os.path.realpath(__file__))
 print os.path.realpath(__file__)
+
+def walltime(filename):
+    """
+    Reads walltime information from a ChaNGa .log file.
+    
+    ** ARGUMENTS **
+    
+    filename : str
+        Filename of the .log file to load
+        
+    ** RETURNS **
+    
+    wall_per_step : array
+        Wall time per step in seconds
+    """
+    
+    wall_per_step = np.genfromtxt(filename, comments='#', delimiter=' ')
+    walltime_total = datetime.timedelta(seconds = wall_per_step[:,-1].sum())
+    walltime_avg = datetime.timedelta(seconds = wall_per_step[:,-1].mean())
+
+    print 'Total walltime: '
+    print str(walltime_total)
+    print 'Average walltime per step:'
+    print str(walltime_avg)
+    
+    return wall_per_step
+    
 
 def load_acc(filename, param_name = None):
     """
