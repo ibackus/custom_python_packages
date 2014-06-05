@@ -34,9 +34,10 @@ def walltime(filename):
         Wall time per step in seconds
     """
     
-    wall_per_step = np.genfromtxt(filename, comments='#', delimiter=' ')
-    walltime_total = datetime.timedelta(seconds = wall_per_step[:,-1].sum())
-    walltime_avg = datetime.timedelta(seconds = wall_per_step[:,-1].mean())
+    log_file = np.genfromtxt(filename, comments='#', delimiter=' ')
+    wall_per_step = log_file[:,-1]
+    walltime_total = datetime.timedelta(seconds = wall_per_step.sum())
+    walltime_avg = datetime.timedelta(seconds = wall_per_step.mean())
 
     print 'Total walltime: '
     print str(walltime_total)
