@@ -125,6 +125,19 @@ def load_acc(filename, param_name = None):
 def sigma(snapshot, bins=100):
     """
     Calculates surface density vs r (relative to the star)
+    
+    ** ARGUMENTS **
+    
+    snapshot : tipsy snapshot
+    bins : int, list, array...
+        Either the number of bins to use or the binedges to use
+        
+    ** RETURNS **
+    
+    sigma : SimArray
+        Surface density as a function of r
+    r_bins : SimArray
+        Radial bin edges
     """
     
     # Begin by subtracting off the star position
@@ -144,67 +157,103 @@ def sigma(snapshot, bins=100):
     
     sig = N*m_gas/(2*np.pi*r_center*dr)
     
-    return sig, r_center
+    return sig, r_bins
     
-
 def Q(snapshot, molecular_mass = 2.0, bins=100):
     """
-    Calculates the Toomre Q, binned as a function of radius for a snapshot.
-    snapshot should be either a filename or a pynbody simsnap.
+    Calculates the Toomre Q as a function of r, assuming radial temperature
+    profile and kappa ~= omega
     
-    molecular_mass is the mean molecular mass divided by amu
+    ** ARGUMENTS **
     
-    bins is either the number of radial bins to use or the radial bin edges
+    snapshot : tipsy snapshot
+    molecular_mass : float
+        Mean molecular mass (for sound speed).  Default = 2.0
+    bins : int or array
+        Either the number of bins or the bin edges
+        
+    ** RETURNS **
     
-    RETURNS
-    
-    Returns a tuple (Q, r_bin_centers)
-    where Q is evaluated at r_bin_centers
+    Q : array
+        Toomre Q as a function of r
+    r_edges : array
+        Radial bin edges
     """
-    # If snapshot is a filename, load it.  Otherwise, assume it is a snapshot
-    if isinstance(snapshot, str):
-        
-        snapshot = pynbody.load(snapshot)
-        
-    # Set up constants
-    G = SimArray(1.0,'G')
-    kB = SimArray(1.0,'k')
-    # Begin by subtracting off the star position
-    star_pos = snapshot.star['pos'].copy()
-    pos = snapshot.gas['pos'].copy()
-    n_particles = pos.shape[0]
-    # Make star_pos a matrix and subtract it off
-    pos -= np.dot(np.ones([n_particles,1]), star_pos)
-    r = np.sqrt(pos[:,0]**2 + pos[:,1]**2)
-    # Load other quantities
-    m_star = snapshot.star['mass']
-    m_gas = snapshot.gas['mass'][[0]]
-    T = snapshot.gas['temp']
-    # Calculate sound speed
-    m_mol = molecular_mass * SimArray(1.0,'m_p') # mean molecular mass in amu
-    c_s = np.sqrt(kB*T/m_mol)
-    # Find mass interior to every particle
-    n_int = np.array(((r.argsort()).argsort()).tolist(), dtype='int')
-    m_int = m_star + n_int*m_gas
-    # Calculate sigma (surface density)
-    n_per_bin, r_binedges = np.histogram(r, bins=bins)
-    r_binedges = SimArray(r_binedges, r.units)
-    dr = r_binedges[[1]] - r_binedges[[0]]
-    r_bincenters = (r_binedges[0:-1] + r_binedges[1:])/2.0
-    sigma = m_gas*n_per_bin/(2*np.pi*r_bincenters*dr)
-    sigma_units = sigma.units
-    sigma = interp.interp1d(r_bincenters, sigma, kind='linear', bounds_error=False)
-    sigma = SimArray(sigma(r), sigma_units)
-    # Calculate epicyclic frequency (kappa)
-    k = np.sqrt(G * (m_int + 2*np.pi*sigma*r**2)/r**(3,1))
-    # calculate Q and return as numpy array
-    Q = c_s*k/(np.pi * G * sigma)
-    Q.convert_units('1')
-    Q = np.array(Q.tolist())
-    # Bin Q and take the average
-    Q_binned = binned_mean(r, Q, binedges=r_binedges)[1]
     
-    return Q_binned, r_bincenters
+    
+    kB = SimArray([1.0],'k')
+    G = SimArray([1.0],'G')
+    sig, r_edges = sigma(snapshot, bins)
+    p = pynbody.analysis.profile.Profile(snapshot, bins=r_edges)
+    T = p['temp']
+    omega = p['omega']
+    
+    m = SimArray(molecular_mass,'m_p')
+    
+    c_s = np.sqrt(kB*T/m)
+    
+    return (omega*c_s/(np.pi*G*sig)).in_units('1'), r_edges
+    
+    
+#def Q(snapshot, molecular_mass = 2.0, bins=100):
+#    """
+#    Calculates the Toomre Q, binned as a function of radius for a snapshot.
+#    snapshot should be either a filename or a pynbody simsnap.
+#    
+#    molecular_mass is the mean molecular mass divided by amu
+#    
+#    bins is either the number of radial bins to use or the radial bin edges
+#    
+#    RETURNS
+#    
+#    Returns a tuple (Q, r_bin_centers)
+#    where Q is evaluated at r_bin_centers
+#    """
+#    
+#    # If snapshot is a filename, load it.  Otherwise, assume it is a snapshot
+#    if isinstance(snapshot, str):
+#        
+#        snapshot = pynbody.load(snapshot)
+#        
+#    # Set up constants
+#    G = SimArray(1.0,'G')
+#    kB = SimArray(1.0,'k')
+#    # Begin by subtracting off the star position
+#    star_pos = snapshot.star['pos'].copy()
+#    pos = snapshot.gas['pos'].copy()
+#    n_particles = pos.shape[0]
+#    # Make star_pos a matrix and subtract it off
+#    pos -= np.dot(np.ones([n_particles,1]), star_pos)
+#    r = np.sqrt(pos[:,0]**2 + pos[:,1]**2)
+#    # Load other quantities
+#    m_star = snapshot.star['mass']
+#    m_gas = snapshot.gas['mass'][[0]]
+#    T = snapshot.gas['temp']
+#    # Calculate sound speed
+#    m_mol = molecular_mass * SimArray(1.0,'m_p') # mean molecular mass in amu
+#    c_s = np.sqrt(kB*T/m_mol)
+#    # Find mass interior to every particle
+#    n_int = np.array(((r.argsort()).argsort()).tolist(), dtype='int')
+#    m_int = m_star + n_int*m_gas
+#    # Calculate sigma (surface density)
+#    n_per_bin, r_binedges = np.histogram(r, bins=bins)
+#    r_binedges = SimArray(r_binedges, r.units)
+#    dr = r_binedges[[1]] - r_binedges[[0]]
+#    r_bincenters = (r_binedges[0:-1] + r_binedges[1:])/2.0
+#    sigma = m_gas*n_per_bin/(2*np.pi*r_bincenters*dr)
+#    sigma_units = sigma.units
+#    sigma = interp.interp1d(r_bincenters, sigma, kind='linear', bounds_error=False)
+#    sigma = SimArray(sigma(r), sigma_units)
+#    # Calculate epicyclic frequency (kappa)
+#    k = np.sqrt(G * (m_int + 2*np.pi*sigma*r**2)/r**(3,1))
+#    # calculate Q and return as numpy array
+#    Q = c_s*k/(np.pi * G * sigma)
+#    Q.convert_units('1')
+#    Q = np.array(Q.tolist())
+#    # Bin Q and take the average
+#    Q_binned = binned_mean(r, Q, binedges=r_binedges)[1]
+#    
+#    return Q_binned, r_bincenters
     
 def strip_units(x):
     """
