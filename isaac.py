@@ -19,6 +19,7 @@ import datetime
 self_dir = os.path.dirname(os.path.realpath(__file__))
 print os.path.realpath(__file__)
 
+
 def walltime(filename):
     """
     Reads walltime information from a ChaNGa .log file.
@@ -121,10 +122,53 @@ def load_acc(filename, param_name = None):
     
     return acc_sim
     
+def height(snapshot, bins=100, center_on_star=True):
+    """
+    Calculates the characteristic height (h) of a flared disk as a function
+    of cylindrical radius (r).
+    
+    ** ARGUMENTS **
+    
+    snapshot : TipsySnap
+        Simulation snapshot for a flared disk
+    bins : int or array_like
+        Specifies the bins to use.  If int, specifies the number of bins.  If 
+        array_like, specifies the bin edges
+    center_on_star : bool
+        If true (DEFAULT), cylindrical r is calculated relative to the star
+        
+    ** RETURNS **
+    
+    r_edges : SimArray
+        Radial bin edges used for calculating h.  Length N+1
+    h : SimArray
+        Height as a function of r, calculated as the RMS of z over a bin.
+        Length N
+    """
+    # Center on star
+    if center_on_star:
+        
+        star_pos = snapshot.s['pos'].copy()
+        snapshot['pos'] -= star_pos
+        
+    else:
+        
+        star_pos = 0.0*snapshot.s['pos']
+        
+    # Calculate height
+    r = snapshot.g['rxy']
+    z2 = snapshot.g['z']**2
+    r_edges, z2_mean, err = binned_mean(r, z2, bins=bins, ret_bin_edges=True)
+    h = np.sqrt(z2_mean)
+    
+    # Add star_pos back to snapshot
+    snapshot['pos'] += star_pos
+    
+    return r_edges, h
         
 def sigma(snapshot, bins=100):
     """
-    Calculates surface density vs r (relative to the star)
+    Calculates surface density vs r (relative to the center of mass)
     
     ** ARGUMENTS **
     
@@ -140,22 +184,22 @@ def sigma(snapshot, bins=100):
         Radial bin edges
     """
     
-    # Begin by subtracting off the star position
-    star_pos = snapshot.star['pos'].copy()
-    pos = snapshot.gas['pos'].copy()
-    n_particles = pos.shape[0]
-    # Make star_pos a matrix and subtract it off
-    pos -= np.dot(np.ones([n_particles,1]), star_pos)
-    r = np.sqrt(pos[:,0]**2 + pos[:,1]**2)
+    # Begin by subtracting off the center of mass position
+    cm = (snapshot['mass'][:,None] * snapshot['pos']).sum()/(snapshot['mass'].sum())
+    snapshot['pos'] -= cm
+    r = snapshot.g['rxy']
     # particle mass
     m_gas = snapshot.gas['mass'][[0]]
     
     N, r_bins = np.histogram(r, bins=bins)
-    r_bins = match_units(r_bins, r)[0]
+    r_bins = match_units(r_bins, r.units)[0]
     r_center = (r_bins[1:] + r_bins[0:-1])/2
     dr = r_bins[[1]] - r_bins[[0]]
     
     sig = N*m_gas/(2*np.pi*r_center*dr)
+    
+    # Add star position back to positions
+    snapshot['pos'] += cm
     
     return sig, r_bins
     
@@ -194,66 +238,6 @@ def Q(snapshot, molecular_mass = 2.0, bins=100):
     
     return (omega*c_s/(np.pi*G*sig)).in_units('1'), r_edges
     
-    
-#def Q(snapshot, molecular_mass = 2.0, bins=100):
-#    """
-#    Calculates the Toomre Q, binned as a function of radius for a snapshot.
-#    snapshot should be either a filename or a pynbody simsnap.
-#    
-#    molecular_mass is the mean molecular mass divided by amu
-#    
-#    bins is either the number of radial bins to use or the radial bin edges
-#    
-#    RETURNS
-#    
-#    Returns a tuple (Q, r_bin_centers)
-#    where Q is evaluated at r_bin_centers
-#    """
-#    
-#    # If snapshot is a filename, load it.  Otherwise, assume it is a snapshot
-#    if isinstance(snapshot, str):
-#        
-#        snapshot = pynbody.load(snapshot)
-#        
-#    # Set up constants
-#    G = SimArray(1.0,'G')
-#    kB = SimArray(1.0,'k')
-#    # Begin by subtracting off the star position
-#    star_pos = snapshot.star['pos'].copy()
-#    pos = snapshot.gas['pos'].copy()
-#    n_particles = pos.shape[0]
-#    # Make star_pos a matrix and subtract it off
-#    pos -= np.dot(np.ones([n_particles,1]), star_pos)
-#    r = np.sqrt(pos[:,0]**2 + pos[:,1]**2)
-#    # Load other quantities
-#    m_star = snapshot.star['mass']
-#    m_gas = snapshot.gas['mass'][[0]]
-#    T = snapshot.gas['temp']
-#    # Calculate sound speed
-#    m_mol = molecular_mass * SimArray(1.0,'m_p') # mean molecular mass in amu
-#    c_s = np.sqrt(kB*T/m_mol)
-#    # Find mass interior to every particle
-#    n_int = np.array(((r.argsort()).argsort()).tolist(), dtype='int')
-#    m_int = m_star + n_int*m_gas
-#    # Calculate sigma (surface density)
-#    n_per_bin, r_binedges = np.histogram(r, bins=bins)
-#    r_binedges = SimArray(r_binedges, r.units)
-#    dr = r_binedges[[1]] - r_binedges[[0]]
-#    r_bincenters = (r_binedges[0:-1] + r_binedges[1:])/2.0
-#    sigma = m_gas*n_per_bin/(2*np.pi*r_bincenters*dr)
-#    sigma_units = sigma.units
-#    sigma = interp.interp1d(r_bincenters, sigma, kind='linear', bounds_error=False)
-#    sigma = SimArray(sigma(r), sigma_units)
-#    # Calculate epicyclic frequency (kappa)
-#    k = np.sqrt(G * (m_int + 2*np.pi*sigma*r**2)/r**(3,1))
-#    # calculate Q and return as numpy array
-#    Q = c_s*k/(np.pi * G * sigma)
-#    Q.convert_units('1')
-#    Q = np.array(Q.tolist())
-#    # Bin Q and take the average
-#    Q_binned = binned_mean(r, Q, binedges=r_binedges)[1]
-#    
-#    return Q_binned, r_bincenters
     
 def strip_units(x):
     """
@@ -557,12 +541,17 @@ def digitize_threshold(x, min_per_bin = 0, bins=10):
     
     return ind, bin_edges
 
-def binned_mean(x, y, nbins=10, binedges = None, weights=None,\
-weighted_bins=False):
+def binned_mean(x, y, bins=10, nbins=None, binedges = None, weights=None,\
+weighted_bins=False, ret_bin_edges=False):
     """
-    Bins y according to x and takes the average for each bin.  If binedges is
-    specified, the x-bins are defined by binedges.  Otherwise the x-bins are
-    determined by nbins
+    Bins y according to x and takes the average for each bin.  
+    
+    bins can either be an integer (the number of bins to use) or an array of
+    binedges.  bins will be overridden by nbins or binedges
+
+    Optionally (for compatibility reasons) if binedges is specified, the 
+    x-bins are defined by binedges.  Otherwise the x-bins are determined by 
+    nbins
     
     If weights = None, equal weights are assumed for the average, otherwise
     weights for each data point should be specified
@@ -575,8 +564,16 @@ weighted_bins=False):
     
     NaNs are ignored for the input.  Empty bins are returned with nans
     
-    RETURNS a tuple of (bin_centers, y_mean, y_err)
+    RETURNS a tuple of (bin_centers, y_mean, y_err) if ret_bin_edges=False
+    else, Returns (bin_edges, y_mean, y_err)
     """
+    if (isinstance(bins, int)) and (nbins is None):
+        
+        nbins = bins
+        
+    elif (hasattr(bins, '__iter__')) and (binedges is None):
+        
+        binedges = bins
         
     if binedges is not None:
         
@@ -636,13 +633,20 @@ weighted_bins=False):
     if not weighted_bins:
         
         bin_centers = (binedges[0:-1] + binedges[1:])/2.0
+        binedges = match_units(binedges, x)[0]
         bin_centers = match_units(bin_centers, x)[0]
         
     else:
         
         bin_centers[N==0] = np.nan
     
-    return bin_centers, y_mean, y_err
+    if ret_bin_edges:
+        
+        return binedges, y_mean, y_err
+        
+    else:
+        
+        return bin_centers, y_mean, y_err
     
 def heatmap(x, y, z, bins=10, plot=True, output=False):
     """
@@ -791,34 +795,6 @@ def configsave(param,filename,ftype='auto'):
         warnings.warn('no such filetype {0}\nCould not save'.format(ftype))
     f.close()
     
-
-# DEPRECATED (SLOW)
-#def extrap1d(x,y):
-#    """
-#    Calculates a linear interpolation of x and y and does a linear
-#    extrapolation for points outside of x and y.
-#    Uses scipy.interpolate.interp1d
-#    """
-#    # Ignore nans
-#    ind = (~np.isnan(x)) & (~np.isnan(y))
-#    x = x[ind]
-#    y = y[ind]
-#    # calculate interpolation
-#    yspline = interp.interp1d(x,y,kind='linear')
-#    
-#    def pointwise(x0):
-#        if x0 < x.min():
-#            return y[0] +  (x0 - x[0])*(y[1]-y[0])/(x[1]-x[0])
-#        elif x0 > x.max():
-#            return y[-1] + (x0 - x[-1])*(y[-1] - y[-2])/(x[-1] - x[-2])
-#        else:
-#            return yspline(x0)
-#    
-#    def ufunclike(x):
-#        return np.array(map(pointwise,np.array(x)))
-#    
-#    return ufunclike
-    
 def extrap1d(x,y):
     """
     Calculates a linear interpolation of x and y and does a linear
@@ -834,13 +810,32 @@ def extrap1d(x,y):
     
     def fcn(x0):
         
-        mask1 = x0 < x.min()
-        mask2 = x0 > x.max()
-        out = np.zeros(len(x0))
-        out[mask1] = y[0] +  (x0[mask1] - x[0])*(y[1]-y[0])/(x[1]-x[0])
-        out[mask2] = y[-1] + (x0[mask2] - x[-1])*(y[-1] - y[-2])/(x[-1] - x[-2])
-        mask3 = (~mask1) & (~mask2)
-        out[mask3] = yspline(x0[mask3])
+        if hasattr(x0,'__iter__'):
+            
+            mask1 = x0 < x.min()
+            mask2 = x0 > x.max()
+            out = np.zeros(len(x0))
+            out[mask1] = y[0] +  (x0[mask1] - x[0])*(y[1]-y[0])/(x[1]-x[0])
+            out[mask2] = y[-1] + (x0[mask2] - x[-1])*(y[-1] - y[-2])/(x[-1] - x[-2])
+            mask3 = (~mask1) & (~mask2)
+            out[mask3] = yspline(x0[mask3])
+            
+        else:
+            
+            if x0 < x.min():
+                
+                out = y[0] +  (x0 - x[0])*(y[1]-y[0])/(x[1]-x[0])
+                
+            elif x0 > x.max():
+                
+                out = y[-1] + (x0 - x[-1])*(y[-1] - y[-2])/(x[-1] - x[-2])
+                
+            else:
+                
+                out = yspline(x0)
+                
+            # Don't return an array with one element
+            out = float(out)
         
         return out        
     
