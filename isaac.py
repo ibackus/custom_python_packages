@@ -224,7 +224,6 @@ def Q(snapshot, molecular_mass = 2.0, bins=100):
         Radial bin edges
     """
     
-    
     kB = SimArray([1.0],'k')
     G = SimArray([1.0],'G')
     sig, r_edges = sigma(snapshot, bins)
@@ -236,8 +235,7 @@ def Q(snapshot, molecular_mass = 2.0, bins=100):
     
     c_s = np.sqrt(kB*T/m)
     
-    return (omega*c_s/(np.pi*G*sig)).in_units('1'), r_edges
-    
+    return (omega*c_s/(np.pi*G*sig)).in_units('1'), r_edges    
     
 def strip_units(x):
     """
