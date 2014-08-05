@@ -688,7 +688,7 @@ def heatmap(x, y, z, bins=10, plot=True, output=False):
         cmap = copy.copy(matplotlib.cm.jet)
         cmap.set_bad('w',1.)
         masked_z = np.ma.array(z_binned, mask=np.isnan(z_binned))
-        plt.pcolor(x_mesh, y_mesh, masked_z, cmap = cmap)
+        plt.pcolormesh(x_mesh, y_mesh, masked_z, cmap = cmap)
         plt.colorbar()
 
     if output:
