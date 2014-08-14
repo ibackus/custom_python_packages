@@ -27,3 +27,7 @@ iMaxRung                 = 30
 iOutInterval             = 10
 nSteps                   = 500
 dDumpFrameStep  = 10
+#bDoSinks                 = 1
+#dSinkBoundOrbitRadius    = 0.1
+#dSinkRadius              = 0.1
+#dSinkMassMin = 0.3
