@@ -48,7 +48,7 @@ def walltime(filename):
     return wall_per_step
     
 
-def load_acc(filename, param_name = None):
+def load_acc(filename, param_name = None, low_mem = True):
     """
     Loads accelerations from a ChaNGa acceleration file (.acc2), ignoring the
     star particle.
@@ -59,6 +59,9 @@ def load_acc(filename, param_name = None):
     IF no param_file is found, the defaults are used:
         length unit: AU
         mass unit  : Msol
+        
+    Setting low_mem=True decreases memory usage by about 2x but also increases
+    readtime by about 2x
     """
     
     if param_name is None:
@@ -93,34 +96,38 @@ def load_acc(filename, param_name = None):
         param['dKpcUnit'] = pynbody.units.au.ratio('kpc')
         # Assume mass units as Msol
         param['dMsolUnit'] = 1.0
-    
-    # Load acceleration file as numpy array
-    acc_in = np.genfromtxt(filename)
-    n_particles = int(acc_in[0])
-    acc_in = acc_in[1:]
-    
-    if (len(acc_in) % n_particles) == 0:
         
-        n_dim = len(acc_in)/n_particles
-        
-    else:
-        
-        raise IOError, 'Number of entries is not int multiple of num. particles'
-        
-    # Reshape the input accelerations, ignoring the star particle
-    acc_2D = acc_in.reshape([n_particles, n_dim], order='F')
-    acc_2D = acc_2D[0:-1]
-    
     # Figure out units
     G = pynbody.units.G
     l_unit = param['dKpcUnit']*pynbody.units.kpc
     m_unit = param['dMsolUnit']*pynbody.units.Msol
     t_unit = ((l_unit**3) * G**-1 * m_unit**-1)**(1,2)
     a_unit = l_unit * t_unit**-2
-    # Cast acc_2D as a SimArray with units a_unit
-    acc_sim = match_units(acc_2D, a_unit)[0]
     
-    return acc_sim
+    if low_mem:
+    
+        acc_file = open(filename, 'r')
+        n_particles = int(acc_file.readline().strip())
+        acc = SimArray(np.zeros(3*n_particles, dtype=np.float32), a_unit)
+        
+        for i, line in enumerate(acc_file):
+            
+            acc[i] = np.float32(line.strip())
+            
+        acc_file.close()
+            
+        return acc.reshape([n_particles, 3], order='F')[0:-1]
+        
+    else:
+        
+        # Load acceleration file as numpy array
+        acc = np.genfromtxt(filename, skip_header=1, dtype=np.float32)
+        n_particles = len(acc)/3
+        
+        # Reshape and make it a SimArray with proper units
+        acc = SimArray(acc.reshape([n_particles, 3], order='F'), a_unit)
+        
+        return acc
     
 def height(snapshot, bins=100, center_on_star=True):
     """
