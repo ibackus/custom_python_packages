@@ -379,6 +379,75 @@ def make_param(snapshot, filename=None):
     
     return param
     
+def make_director(sigma_min, sigma_max, r, resolution=1200, filename='snapshot'):
+    """
+    Makes a director dictionary for ChaNGa runs based on the min/max surface
+    density, maximum image radius, and image resolution for a gaseous
+    protoplanetary disk.  The created dictionary can be saved with
+    isaac.configsave
+    
+    The method is to use an example director file (saved as default.director)
+    which works for one simulation and scale the various parameters accordingly.
+    default.director should have a commented line in it which reads:
+        #sigma_max float
+    where float is the maximum surface density of the simulation in simulation
+    units.
+    
+    **ARGUMENTS**
+    
+    sigma_min : float
+        The surface density that corresponds to 0 density on the image (ie the
+        minimum threshold).  Required for setting the dynamic range
+    sigma_max : float
+        Maximum surface density in the simulation
+    r : float
+        Maximum radius to plot out to
+    resolution : int or float
+        Number of pixels in image.  The image is shape (resolution, resolution)
+    filename : str
+        prefix to use for saving the images.  Example: if filename='snapshot',
+        then the outputs will be of form 'snapshot.000000000.ppm'
+        
+    **RETURNS**
+    
+    director : dict
+        A .director dictionary.  Can be saved with isaac.configsave
+    """
+    # -----------------------------------------------------------
+    # Parse defaults to get scale factor for c
+    # -----------------------------------------------------------
+    defaults = configparser(os.path.join(self_dir, 'default.director'))
+    if '#sigma_max' not in defaults:
+        
+        raise KeyError,'Default .director file should have a line e.g. << #sigma_max 0.01 >>'
+    
+    sigma_max0 = defaults['#sigma_max']
+    c0 = defaults['colgas'][3]
+    n0 = defaults['size'][0]
+    r0 = defaults['eye'][2]
+    A = (c0 * float(n0)**2)/(sigma_max0 * r0**2)
+    
+    # -----------------------------------------------------------
+    # Create new director dictionary
+    # -----------------------------------------------------------
+    director = copy.deepcopy(defaults)
+    director.pop('#sigma_max', None)
+    
+    logscale_min = sigma_min/sigma_max
+    
+    if pynbody.units.has_units(logscale_min):
+        
+        logscale_min = float(logscale_min.in_units('1'))
+        
+    c = A * float(sigma_max * r**2 /float(resolution)**2)
+    
+    director['colgas'][3] = c
+    director['size'] = [resolution, resolution]
+    director['eye'][2] = r
+    director['file'] = filename
+    
+    return director
+    
 def match_units(x, y):
     """
     Matches the units of x to y and returns x and y in the same units.
@@ -776,6 +845,7 @@ def configsave(param,filename,ftype='auto'):
     types = np.array(['param','director'])
     ftype = ftype.lower()
     if ftype == 'auto':
+        # Try to figure out filetype
         a = filename.split('.')
         ftype = a[-1].lower()
     if ftype == 'param':
