@@ -15,9 +15,41 @@ import warnings
 import glob
 import os
 import datetime
+import fnmatch
 
 self_dir = os.path.dirname(os.path.realpath(__file__))
 print os.path.realpath(__file__)
+
+def findfiles(filefilter='*', basedir='.'):
+    """
+    Recursively find files according to filefilter
+    
+    ** ARGUMENTS **
+    
+    filefilter : str
+        Filter for finding files.  ie, '*.jpg' or 'file.txt'
+    
+    basedir : str
+        Base directory to search.  Default is the current directory
+        
+    ** RETURNS **
+    
+    files : list
+        A list of the full path to all files matching filefilter
+    
+    """
+    
+    matches = []
+    
+    for root, dirnames, filenames in os.walk(basedir):
+        
+        for filename in fnmatch.filter(filenames, filefilter):
+            fname = os.path.join(root, filename)
+            fname = os.path.realpath(fname)
+            
+            matches.append(fname)
+            
+    return matches
 
 
 def walltime(filename):
