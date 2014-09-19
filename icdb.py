@@ -87,6 +87,7 @@ class database():
             if os.path.exists(ICname):
                 
                 a.dir = os.path.realpath(a_dir)
+                a.ICname = ICname
                 datalist.append(a)
             
         nfiles = len(datalist)
