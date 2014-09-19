@@ -83,10 +83,10 @@ class database():
             ICname = a.filenames.IC_file_name
             ICname = os.path.join(a_dir, ICname)
             ICname = os.path.realpath(ICname)
-            a.filename = ICname
             
             if os.path.exists(ICname):
                 
+                a.dir = os.path.realpath(a_dir)
                 datalist.append(a)
             
         nfiles = len(datalist)
