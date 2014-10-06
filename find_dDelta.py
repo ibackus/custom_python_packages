@@ -55,6 +55,7 @@ def read_rungdist(p):
     for line in iter(p.stdout.readline, ''):
         
         line = line.strip()
+        print line
         
         if 'rung dist' in line.lower():
             
@@ -77,7 +78,7 @@ def calc_rungdist(param_name, dDelta):
     """
         
     changa_args = '+n 1 -dt {}'.format(dDelta)
-    command = ICgen_utils.changa_command(param_name, changa_args=changa_args)
+    command = ICgen_utils.changa_command(param_name, changa_args=changa_args, preset='isaac')
     p = ICgen_utils.changa_run(command, verbose=False)
     
     return read_rungdist(p)
