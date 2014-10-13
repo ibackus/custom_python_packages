@@ -242,7 +242,50 @@ def sigma(snapshot, bins=100):
     
     return sig, r_bins
     
-def Q(snapshot, molecular_mass = 2.0, bins=100):
+def Q2(snapshot, molecular_mass = 2.0, bins=100, max_height=None):
+    
+    # Physical constants
+    kB = SimArray([1.0],'k')
+    G = SimArray([1.0],'G')
+    # Load stuff froms snapshot
+    v = snapshot.g['vt']
+    r = snapshot.g['rxy']
+    z = snapshot.g['z']
+    T = snapshot.g['temp']
+    # Calculate sound speed for all particles
+    m = match_units(molecular_mass,'m_p')[0]
+    cs = np.sqrt(kB*T/m)
+    # Calculate surface density
+    sig_binned, r_edges = sigma(snapshot, bins)
+    r_cent = (r_edges[1:]+r_edges[0:-1])/2
+    sig_spl = extrap1d(r_cent, sig_binned)
+    sig = SimArray(sig_spl(r), sig_binned.units)
+    # Calculate omega (as a proxy for kappa)
+    omega = v/r
+    kappa = omega
+    
+    #Calculate Q for all particles
+    print 'kappa',kappa.units
+    print 'cs',cs.units
+    print 'sigma', sig.units
+    Q_all = (kappa*cs/(np.pi*G*sig)).in_units('1')
+    
+    # Use particles close to midplane
+    if max_height is not None:
+        
+        dummy, h = height(snapshot, bins=r_edges)
+        ind = np.digitize(r, r_edges) - 1
+        ind[ind<0] = 0
+        ind[ind >= (len(r_edges)-1)] = len(r_edges)-2
+        mask = abs(z) < (max_height*h[ind])
+        Q_all = Q_all[mask]
+        r = r[mask]
+        
+    dummy, Q_binned, dummy2 = binned_mean(r, Q_all, binedges=r_edges)
+    
+    return r_edges, Q_binned
+    
+def Q(snapshot, molecular_mass = 2.0, bins=100, max_height=None):
     """
     Calculates the Toomre Q as a function of r, assuming radial temperature
     profile and kappa ~= omega
@@ -263,18 +306,71 @@ def Q(snapshot, molecular_mass = 2.0, bins=100):
         Radial bin edges
     """
     
+    # Physical constants
     kB = SimArray([1.0],'k')
     G = SimArray([1.0],'G')
+    # Calculate surface density
     sig, r_edges = sigma(snapshot, bins)
-    p = pynbody.analysis.profile.Profile(snapshot, bins=r_edges)
-    T = p['temp']
+    # Calculate keplerian angular velocity (as a proxy for the epicyclic
+    # frequency, which is a noisy calculation)
+    p = pynbody.analysis.profile.Profile(snapshot, bins=r_edges)    
     omega = p['omega']
+    # Calculate sound speed
+    m = match_units(molecular_mass,'m_p')[0]
+    c_s_all = np.sqrt(kB*snapshot.g['temp']/m)
+    # Bin/average sound speed
+    dummy, c_s, dummy2 = binned_mean(snapshot.g['rxy'], c_s_all, binedges=r_edges)
     
-    m = SimArray(molecular_mass,'m_p')
+    return (omega*c_s/(np.pi*G*sig)).in_units('1'), r_edges
     
-    c_s = np.sqrt(kB*T/m)
+def Q_eff(snapshot, molecular_mass=2.0, bins=100):
+    """
+    Calculates the effective Toomre Q as a function of r, assuming radial temp
+    profile and kappa ~= omega and scaleheight << wavelength.  This assumption
+    simplifies the calculation of Q_eff (where wavelength is the wavelength of
+    the disturbances of interest)
     
-    return (omega*c_s/(np.pi*G*sig)).in_units('1'), r_edges    
+    ** ARGUMENTS **
+    
+    snapshot : tipsy snapshot
+    molecular_mass : float
+        Mean molecular mass (for sound speed).  Default = 2.0
+    bins : int or array
+        Either the number of bins or the bin edges
+        
+    ** RETURNS **
+    
+    Qeff : array
+        Effective Toomre Q as a function of r for scale height << wavelength
+    r_edges : array
+        Radial bin edges
+    """
+    # Physical constants
+    kB = SimArray([1.0],'k')
+    G = SimArray([1.0],'G')
+    # Calculate surface density
+    sig, r_edges = sigma(snapshot, bins)
+    # Calculate keplerian angular velocity (as a proxy for the epicyclic
+    # frequency, which is a noisy calculation)
+    p = pynbody.analysis.profile.Profile(snapshot, bins=r_edges)    
+    omega = p['omega']
+    # Calculate sound speed
+    m = match_units(molecular_mass,'m_p')[0]
+    c_s_all = np.sqrt(kB*snapshot.g['temp']/m)
+    # Bin/average sound speed
+    dummy, c_s, dummy2 = binned_mean(snapshot.g['rxy'], c_s_all, binedges=r_edges)    
+    # Calculate scale height
+    dummy, h = height(snapshot, bins=r_edges, center_on_star=False)
+    
+    a = np.pi*G*sig
+    b = (2*a*h/c_s**2).in_units('1')
+    Q0 = (omega*c_s/a).in_units('1')
+    
+    return Q0 * np.sqrt(1 + b), r_edges
+    
+    return ((omega*c_s/a) * np.sqrt(1 + 2*a*h/c_s**2)).in_units('1'), r_edges
+    
+    
     
 def strip_units(x):
     """
