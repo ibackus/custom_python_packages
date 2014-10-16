@@ -21,6 +21,73 @@ import os
 import isaac
 
 
+print 'ok'
+
+
+def calc_clump_pars(f, clump_nums):
+    
+    if isinstance(f, str):
+        
+        f = pynbody.load(f)
+        
+    mask1 = clump_nums > 0
+    
+    clump_nums2 = clump_nums[mask1]
+    # Get units set up
+    m_unit = f['mass'].units
+    l_unit = f['pos'].units
+    v_unit = f['vel'].units
+    rho_unit = f.g['rho'].units
+    
+    # Get arrays of pointers to the required quantities
+    f_mass = f['mass'][mask1]
+    f_pos = f['pos'][mask1]
+    f_v = f['vel'][mask1]
+    f_T = f['temp'][mask1]
+    
+    n_gas = len(f.g[mask1])
+    n_use = mask1.sum()
+    f_rho = SimArray(np.zeros(n_use), rho_unit)
+    f_rho[0:n_gas] = f.g['rho']
+    
+    # Initialize arrays
+    n_clumps = clump_nums2.max()
+    
+    m = SimArray(np.zeros(n_clumps), m_unit) # clump mass
+    N = np.zeros(n_clumps, dtype=int) # Number of particles/clump
+    pos = SimArray(np.zeros([n_clumps,3]), l_unit) # center of mass
+    r = SimArray(np.zeros(n_clumps), l_unit) # center of mass radial position
+    v = SimArray(np.zeros([n_clumps, 3]), v_unit) # center of mass velocity
+    # Angular momentum around the center of mass rest frame
+    J = SimArray(np.zeros([n_clumps, 3]), m_unit*l_unit*v_unit)
+    T = SimArray(np.zeros(n_clumps), 'K') # mass averaged temperature
+    rho = SimArray(np.zeros(n_clumps), rho_unit) # density
+    r_clump = SimArray(np.zeros(n_clumps), l_unit) # clump radius (size)
+    
+    # index of each particle
+    particle_ids = []
+    
+    for i in range(n_clumps):
+        
+        mask2 = (clump_nums2 == i+1)
+        
+        # Mask the input arrays to look at only the current clump
+        p_mass = f_mass[mask2]
+        p_pos = f_mass[mask2]
+        p_v = f_v[mask2]
+        p_T = f_T[mask2]
+        p_rho = f_rho[mask2]
+        
+        # Calculate properties of the clump
+        N[i] = mask2.sum()
+        m[i] = p_mass.sum()
+        pos[i] = np.dot(p_pos.T, p_mass[:,None])/float(m[i])
+        r[i] = np.sqrt((pos[i]**2).sum())
+        v[i] = np.dot(p_v.T, p_mass[:,None])/float(m[i])
+        
+        
+    return N, m, pos, r, v
+        
 
 def _parallel_find_clumps(args):
     """
@@ -38,7 +105,6 @@ def batch_clumps2(f_list, n_smooth=32, param=None, arg_string=None):
     
     f_list : list
         A list containing the filenames of snapshots OR the tipsy snapshots
-        themselves
         
     **RETURNS**
     
