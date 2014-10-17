@@ -98,7 +98,12 @@ def clump_im(f, clump_array, width, qty='rho', resolution=1200, clim=None, clump
         
         im_color[~mask2,1] = 0
         im_color[mask2,0] = 0
-        im_color[:,:,2] = 0
+    
+    else:
+            
+        im_color[:,:,1] = 0
+        
+    im_color[:,:,2] = 0
     
     plt.figure(current_fig.number)
     
