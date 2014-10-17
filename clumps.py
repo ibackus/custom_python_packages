@@ -20,38 +20,34 @@ import os
 # 'Internal' packages
 import isaac
 
-
-print 'ok'
-
-
 def calc_clump_pars(f, clump_nums):
     
     if isinstance(f, str):
         
         f = pynbody.load(f)
         
+    # Only include particles in a clump AND that are not star particles
     mask1 = clump_nums > 0
+    n_star = len(f.s)
+    mask1[-(n_star+1):-1] = False
+    clump_nums1 = clump_nums[mask1]
+    f1 = f[mask1]
     
-    clump_nums2 = clump_nums[mask1]
     # Get units set up
-    m_unit = f['mass'].units
-    l_unit = f['pos'].units
-    v_unit = f['vel'].units
-    rho_unit = f.g['rho'].units
+    m_unit = f1['mass'].units
+    l_unit = f1['pos'].units
+    v_unit = f1['vel'].units
+    rho_unit = f1['rho'].units
     
     # Get arrays of pointers to the required quantities
-    f_mass = f['mass'][mask1]
-    f_pos = f['pos'][mask1]
-    f_v = f['vel'][mask1]
-    f_T = f['temp'][mask1]
-    
-    n_gas = len(f.g[mask1])
-    n_use = mask1.sum()
-    f_rho = SimArray(np.zeros(n_use), rho_unit)
-    f_rho[0:n_gas] = f.g['rho']
+    f_mass = f1['mass']
+    f_pos = f1['pos']
+    f_v = f1['vel']
+    f_T = f1['temp']
+    f_rho = f1['rho']
     
     # Initialize arrays
-    n_clumps = clump_nums2.max()
+    n_clumps = clump_nums1.max()
     
     m = SimArray(np.zeros(n_clumps), m_unit) # clump mass
     N = np.zeros(n_clumps, dtype=int) # Number of particles/clump
@@ -59,7 +55,7 @@ def calc_clump_pars(f, clump_nums):
     r = SimArray(np.zeros(n_clumps), l_unit) # center of mass radial position
     v = SimArray(np.zeros([n_clumps, 3]), v_unit) # center of mass velocity
     # Angular momentum around the center of mass rest frame
-    J = SimArray(np.zeros([n_clumps, 3]), m_unit*l_unit*v_unit)
+    L = SimArray(np.zeros([n_clumps, 3]), m_unit*l_unit*v_unit)
     T = SimArray(np.zeros(n_clumps), 'K') # mass averaged temperature
     rho = SimArray(np.zeros(n_clumps), rho_unit) # density
     r_clump = SimArray(np.zeros(n_clumps), l_unit) # clump radius (size)
@@ -69,11 +65,11 @@ def calc_clump_pars(f, clump_nums):
     
     for i in range(n_clumps):
         
-        mask2 = (clump_nums2 == i+1)
+        mask2 = (clump_nums1 == i+1)
         
         # Mask the input arrays to look at only the current clump
         p_mass = f_mass[mask2]
-        p_pos = f_mass[mask2]
+        p_pos = f_pos[mask2]
         p_v = f_v[mask2]
         p_T = f_T[mask2]
         p_rho = f_rho[mask2]
@@ -81,13 +77,29 @@ def calc_clump_pars(f, clump_nums):
         # Calculate properties of the clump
         N[i] = mask2.sum()
         m[i] = p_mass.sum()
-        pos[i] = np.dot(p_pos.T, p_mass[:,None])/float(m[i])
+        pos[i] = np.dot(p_pos.T, p_mass[:,None]).flatten()
+        pos[i] /= float(m[i])
         r[i] = np.sqrt((pos[i]**2).sum())
-        v[i] = np.dot(p_v.T, p_mass[:,None])/float(m[i])
+        v[i] = np.dot(p_v.T, p_mass[:,None]).flatten()
+        v[i] /= float(m[i])
         
+        # position of all particles relative to center of mass
+        cm_pos = p_pos - pos[i]
+        # velocity of all particles relative to center of mass
+        cm_v = p_v - v[i]
+        # angular momentum of all particles relative to center of mass
+        cm_momentum = (cm_v * p_mass[:,None])
+        p_L = np.cross(cm_pos, cm_momentum)
+        # Total angular momentum relative to center of mass
+        L[i] = p_L.sum(0)
         
-    return N, m, pos, r, v
+        T[i] = p_T.sum()/N[i]
+        rho[i] = p_rho.sum()/N[i]
         
+    out_dict = {'m':m, 'N':N, 'pos':pos, 'r':r, 'v':v, 'L':L, 'T':T, 'rho':rho,\
+    'r_clump': r_clump}
+    
+    return out_dict
 
 def _parallel_find_clumps(args):
     """
