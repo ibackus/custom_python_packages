@@ -16,9 +16,92 @@ SimArray = pynbody.array.SimArray
 import subprocess
 import glob
 import os
+import matplotlib.pyplot as plt
 
 # 'Internal' packages
 import isaac
+
+def clump_im(f, clump_array, width, qty='rho', resolution=1200, clim=None, clump_min=None):
+    """
+    Plots an sph image from f with particles not in clumps colored red and 
+    particles in clumps colored green.
+    
+    **ARGUMENTS**
+    
+    f : TipsySnapshot (see pynbody)
+        The snapshot to plot
+    clump_array : numpy array
+        A array (same length as f) such that 0 entries correspond to particles
+        not in clumps and entries > 0 correspond to particles in clumps
+    width : str, simarray
+        See pynbody.plot.sph.image.  Width of the plot, ie '3 au'
+    resolution : int
+        Resolution in pixels of the plot.  The plot will be res by res pixels
+    clim : tuple,list,array
+        Density limits arranged as [low, high].  Any pixels below low are mapped
+        to 0, any pixels above high are mapped to 1.
+    clump_min : float
+        Used to set a cutoff for masking the clumps.  Not needed
+        
+    **RETURNS**
+    
+    image : numpy nd-array
+        Returns an NxNx3 numpy array of the color image plotted.
+    """
+    
+    current_fig = plt.gcf()
+    interactive_flag = plt.isinteractive()
+    plt.ioff()
+    
+    
+    fig1 = plt.figure()
+    
+    im_all = pynbody.plot.sph.image(f.g, width=width,resolution=resolution, cmap='gray', qty=qty)
+    
+    fig1.clf()
+    
+    mask = clump_array > 0
+    f2 = f[mask]
+    
+    im_clump = pynbody.plot.sph.image(f2.g, width=width,resolution=resolution, cmap='gray',qty=qty)
+    xlim = plt.xlim()
+    ylim = plt.ylim()
+    extent = [xlim[0], xlim[1], ylim[0], ylim[1]]
+    
+    plt.clf()
+    
+    if clim is None:
+        
+        clim = [im_all.min(), im_all.max()]
+        
+    log_clim = [np.log(clim[0]), np.log(clim[1])]
+        
+    im_color = np.zeros([resolution, resolution, 3])
+    im_color[:,:,0] = np.log(im_all)
+    im_color[:,:,1] = np.log(im_clump)
+    
+    im_color -= log_clim[0]
+    im_color /= (log_clim[1] - log_clim[0])
+    im_color[im_color < 0] = 0
+    im_color[im_color > 1] = 1
+    
+    if clump_min is None:
+        
+        clump_min = im_clump.mean()
+        
+    mask2 = im_clump > clump_min
+    im_color[~mask2,1] = 0
+    im_color[mask2,0] = 0
+    im_color[:,:,2] = 0
+    
+    plt.figure(current_fig.number)
+    
+    if interactive_flag:
+        plt.ion()
+    
+    plt.imshow(im_color, extent=extent, interpolation='none', aspect='equal')
+        
+    return im_color
 
 def calc_clump_pars(f, clump_nums):
     
