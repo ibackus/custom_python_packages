@@ -1195,7 +1195,7 @@ def loadhalos(fname=''):
     if fname == '':
         # Empty filename
         pass
-    grp = np.loadtxt(fname,dtype=int)
+    grp = np.loadtxt(fname,dtype=np.uint16)
     grp = grp[1:]   # (ignore the number of particles)
     
     return grp
