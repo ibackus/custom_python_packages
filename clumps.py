@@ -24,12 +24,12 @@ import isaac
 def clump_im(f, clump_array, width, qty='rho', resolution=1200, clim=None, clump_min=None):
     """
     Plots an sph image from f with particles not in clumps colored red and 
-    particles in clumps colored green.
+    particles in clumps colored green.  Uses pynbody for a backend.
     
     **ARGUMENTS**
     
-    f : TipsySnapshot (see pynbody)
-        The snapshot to plot
+    f : TipsySnapshot (see pynbody) or str
+        The snapshot to plot OR the filename of a snapshot to plot
     clump_array : numpy array
         A array (same length as f) such that 0 entries correspond to particles
         not in clumps and entries > 0 correspond to particles in clumps
@@ -48,14 +48,21 @@ def clump_im(f, clump_array, width, qty='rho', resolution=1200, clim=None, clump
     image : numpy nd-array
         Returns an NxNx3 numpy array of the color image plotted.
     """
+    # Check if the input is a filename
+    if isinstance(f, str):
+        
+        f = pynbody.load(f)
     
+    # Get the current state for matplotlib (this still needs work, since an
+    # extra window will in general be created)
     current_fig = plt.gcf()
     interactive_flag = plt.isinteractive()
     plt.ioff()
     
-    
+    # Intermediate figure, required for rendering the plots
     fig1 = plt.figure()
     
+    # Render a grayscale image of all the particles
     im_all = pynbody.plot.sph.image(f.g, width=width,resolution=resolution, cmap='gray', qty=qty)
     xlim = plt.xlim()
     ylim = plt.ylim()
@@ -63,26 +70,35 @@ def clump_im(f, clump_array, width, qty='rho', resolution=1200, clim=None, clump
     
     fig1.clf()
     
+    # Initialize the color image
     im_color = np.zeros([resolution, resolution, 3])
+    # Set the red channel of the color image to be the plot of all particles
     im_color[:,:,0] = np.log(im_all)
     
+    # Check to see that there is at least one clump
     clump_flag = (clump_array.max() > 0)
     
     if clump_flag:
         
+        # Get a sub-snap of just particles in a clump
         mask = clump_array > 0
         f2 = f[mask]
+        # Render an image of just particles in a clump
         im_clump = pynbody.plot.sph.image(f2.g, width=width,resolution=resolution, cmap='gray',qty=qty)
+        # Set the clump image as the green channel
         im_color[:,:,1] = np.log(im_clump)
         
         plt.clf()
         
+        # Most of the clump image should be blank space: igore everything
+        # below a threshold
         if clump_min is None:
         
             clump_min = im_clump.mean()
         
         mask2 = im_clump > clump_min
     
+    # Set the color scaling
     if clim is None:
         
         clim = [im_all.min(), im_all.max()]
@@ -96,7 +112,9 @@ def clump_im(f, clump_array, width, qty='rho', resolution=1200, clim=None, clump
     
     if clump_flag:
         
+        # Set all pixels outside a clump (in the clump image) to 0
         im_color[~mask2,1] = 0
+        # Set all pixels inside a clump (in the overall image) to 0
         im_color[mask2,0] = 0
     
     else:
@@ -105,12 +123,16 @@ def clump_im(f, clump_array, width, qty='rho', resolution=1200, clim=None, clump
         
     im_color[:,:,2] = 0
     
+    # Plot
     plt.figure(current_fig.number)
     
     if interactive_flag:
         plt.ion()
     
     plt.imshow(im_color, extent=extent, interpolation='none', aspect='equal')
+    
+    # Echo the color limits used
+    print 'clims used: {}'.format(clim)
         
     return im_color
 
@@ -217,10 +239,10 @@ def batch_clumps2(f_list, n_smooth=32, param=None, arg_string=None):
     clumps : list
         A list containing the clumps for each snapshot in f_list
     """
-    
+    # Number of processes to create = number of cores
     n_proc = cpu_count()
-    #n_files = len(f_list)
     
+    # Set up the arguments for calls to find_clumps
     arg_list = []
     
     for i, f_name in enumerate(f_list):
@@ -228,12 +250,14 @@ def batch_clumps2(f_list, n_smooth=32, param=None, arg_string=None):
         arg_list.append([f_name, n_smooth, param, arg_string, i])
         
     print arg_list
+    
     # Set up the pool
     pool = Pool(n_proc)
     
     # Run the job in parallel
-    results = pool.map(_parallel_find_clumps, arg_list)
+    results = pool.map(_parallel_find_clumps, arg_list, chunksize=1)
     pool.close()
+    pool.join()
     
     return results
 
@@ -324,12 +348,12 @@ def find_clumps(f, n_smooth=32, param=None, arg_string=None, seed=None):
     
     command = 'totipnat < {} | skid -tau {:.2e} -d {:.2e} -m {:d} -s {:d} -o {}'\
     .format(f_name, tau, rho_min, n_smooth, n_smooth, f_prefix)
-    print '\n', command
+#    print '\n', command
     #p = subprocess.Popen(command, shell=True, stdout=logfile, stderr=logfile)
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
-    for line in iter(p.stdout.readline, ''):
-        print line,
+#    for line in iter(p.stdout.readline, ''):
+#        print line,
     p.wait()
     
     # Load clumps
