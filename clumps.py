@@ -135,12 +135,35 @@ def clump_im(f, clump_array, width, qty='rho', resolution=1200, clim=None, clump
     print 'clims used: {}'.format(clim)
         
     return im_color
+    
+def _parallel_clump_pars(args):
+    
+    return calc_clump_pars(*args)
+    
+def batch_clump_pars(flist, clump_list):
+    
+    nproc = cpu_count()
+    
+    arg_list = zip(flist, clump_list)
+    
+    pool = Pool(nproc)
+    
+    clump_pars = pool.map(_parallel_clump_pars, arg_list)
+    pool.close()
+    pool.join()
+    
+    return clump_pars
 
 def calc_clump_pars(f, clump_nums):
     
     if isinstance(f, str):
         
         f = pynbody.load(f)
+        
+    if clump_nums.max() < 1:
+        # Return none if there are no clumps
+    
+        return
         
     # Only include particles in a clump AND that are not star particles
     mask1 = clump_nums > 0
