@@ -20,6 +20,56 @@ import fnmatch
 self_dir = os.path.dirname(os.path.realpath(__file__))
 print os.path.realpath(__file__)
 
+def kepler_pos(pos, vel, t, Mstar, order=10):
+    """
+    Estimate position at future time t assuming an elliptical keplerian orbit
+    """
+    
+    G = SimArray(1.0, 'G')
+    mu = G*Mstar
+    r = np.sqrt((pos**2).sum())
+    v = np.sqrt((vel**2).sum())
+    # Calculate semi-major axis
+    a = mu*r/(2*mu - v*v*r)
+    a.convert_units(r.units)
+    # Calculate eccentricity vector
+    ecc = (v*v)*pos/mu - ((pos*vel).sum())*vel/mu - pos/r
+    ecc.convert_units('1')
+    # Calculate eccentricity
+    e = float(np.sqrt((ecc**2).sum()))
+    
+    # Calculate initial eccentric anomaly
+    # x1 = a*e^2 + r.e
+    x1 = a*e**2 + (pos*ecc).sum()
+    # y1 = |r x e| * sign(r.v)
+    y1 = np.sqrt((np.cross(pos, ecc)**2).sum())
+    y1 *= (pos*vel).sum()/abs((pos*vel).sum())
+    E0 = np.arctan2(y1,x1)
+    
+    # Calculate mean anomaly
+    M0 = E0 - e*np.sin(E0)
+    a3 = np.power(a,3)
+    M = (np.sqrt(mu/a3)*t).in_units('1') + M0
+    
+    # Calculate eccentric anomaly
+    E = E0
+    for i in range(order):
+        
+        E = M + e*np.sin(E)
+        
+    # Calculate (x1, y1) (relative to center of ellipse, not focus)
+    x1 = (2*a - r) * np.cos(E)
+    y1 = (2*a - r) * np.sin(E)
+    
+    # Transform to original coordinates
+    
+    x1hat = ecc/np.sqrt((ecc**2).sum())
+    y1hat = np.cross(np.cross(pos, vel), ecc)
+    y1hat /= np.sqrt((y1hat**2).sum())
+    
+    pos_f = (x1 - a*e)*x1hat + y1*y1hat
+    return pos_f
+
 def findfiles(filefilter='*', basedir='.'):
     """
     Recursively find files according to filefilter
