@@ -12,6 +12,17 @@ import re
 import subprocess
 
 def subber(directories, scriptname):
+    """
+    Submits scriptname, contained in all the directories, to the submission
+    queue using qsub.
+    
+    **ARGUMENTS**
+    
+    directories : str, list, ndarray, tuple
+        The directory or directories containing the submission script
+    scriptname : str
+        Script to submit.  Should be present in all the directories
+    """
     
     # Make the directories list iterable
     if isinstance(directories, str):
@@ -47,8 +58,48 @@ def subber(directories, scriptname):
     # Return to current working directory
     os.chdir(cwd)
 
-def make_continue_sub(simdirs='.', paramname='snapshot.param', simtime=1, \
-oldsub='subber.sh', nSteps=None, newparam='continue.param', newsub='cont_subber.sh'):
+def make_continue_sub(simdirs='.', paramname='snapshot.param', \
+newparam='continue.param', simtime=1, nSteps=None, oldsub='subber.sh', \
+newsub='cont_subber.sh'):
+    """
+    Makes a submission script for continuing a simulation from a previous output.
+    Also makes a .param file for the continued simulation.  The simulation
+    will be continued in the same directory, with snapshot numbering scheme
+    for outputs being the same.
+    
+    Parameters for the original simulation cannot be altered (except the number
+    of steps you want to continue the simulation by)
+    
+    Any checkpoints will be deleted.
+    
+    Requires a submission script be present for the original simulation
+    
+    
+    **ARGUMENTS**
+    
+    simdirs : str or iterable containing strings
+        The directory/directories containing the simulation(s) to continue
+    paramname : str
+        Filename of the .param file for the simulation(s).  Must be the same 
+        for every simulation
+    newparam : str
+        filename for the .param file for the continued simulation
+    simtime : float
+        How many times the original nSteps to continue by.  IE, the new total
+        number of steps (including the original simulation) is calculated as:
+            nSteps_new = nSteps_old * (simtime + 1)
+        if simtime=0, then the simulation will just continue and finish and
+        the original number of steps.  (similar to checkpointing)
+    nSteps : int
+        OVERRIDES simtime.  Sets the total number of extra steps to simulate.    
+    oldsub : str
+        Filename for the original submission script (should be the same for
+        every simdir)
+    newsub : str
+        Filename for the new submission script (should be the same for every 
+        simdir)
+    
+    """
     
     # Lazy man's way of dealing with files in another directory
     cwd = os.getcwd()
@@ -93,7 +144,8 @@ oldsub='subber.sh', nSteps=None, newparam='continue.param', newsub='cont_subber.
         # Save new param file
         isaac.configsave(param, newparam, ftype='param')
         
-        # Delete old checkpoints
+        # Delete old checkpointssubmitted 8 hours ago by Aikukun to /r/gifs
+
         for checkpoint in glob.glob(fprefix + '.chk*'):
             
             print 'removing ' + checkpoint
@@ -120,5 +172,3 @@ oldsub='subber.sh', nSteps=None, newparam='continue.param', newsub='cont_subber.
         
         # Change back to original working directory
         os.chdir(cwd)
-    
-    return param
