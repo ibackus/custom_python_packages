@@ -21,6 +21,28 @@ import matplotlib.pyplot as plt
 # 'Internal' packages
 import isaac
 
+def link_clumps(clump_pars1, clump_pars2):
+    
+    n1 = len(clump_pars1['iord'])
+    n2 = len(clump_pars2['iord'])
+    
+    new_clump_num = np.zeros(n1, dtype=int)
+    candidates = np.zeros(n2, dtype=int)
+    
+    for i, iord1 in enumerate(clump_pars1['iord']):
+        
+        for j, iord2 in enumerate(clump_pars2['iord']):
+            
+            # Calculate the number of particles common to clumps i and j
+            candidates[j] = len(np.intersect1d(iord1, iord2))
+        
+        new_clump_num[i] = candidates.argmax()
+        print (candidates>0).sum()
+        
+        
+    return new_clump_num
+        
+
 def clump_im(f, clump_array, width, qty='rho', resolution=1200, clim=None, clump_min=None):
     """
     Plots an sph image from f with particles not in clumps colored red and 
@@ -154,16 +176,40 @@ def batch_clump_pars(flist, clump_list):
     
     return clump_pars
 
-def calc_clump_pars(f, clump_nums):
+def calc_clump_pars(f, clump_nums, iorder=None):
+    
     
     if isinstance(f, str):
         
         f = pynbody.load(f)
         
+    if iorder is not None:
+        # The user has set iorder        
+        if isinstance(iorder, str):
+            # Assume this is a filename to the iorder file
+            iorder = np.genfromtxt(iorder, int, skip_header=1)
+            
+    else:
+        
+        # Try to load iorder
+        iorder = f.filename + '.iord'
+        
+        if os.path.exists(iorder):
+            
+            print 'Loading ' + iorder
+            iorder = np.genfromtxt(iorder, int, skip_header=1)
+            
+        else:
+            
+            # No iorder could be loaded, make a default one
+            iorder = np.arange(len(f))
+        
     if clump_nums.max() < 1:
         # Return none if there are no clumps
     
         return
+        
+    particle_nums = np.arange(len(f))
         
     # Only include particles in a clump AND that are not star particles
     mask1 = clump_nums > 0
@@ -171,6 +217,8 @@ def calc_clump_pars(f, clump_nums):
     mask1[-(n_star+1):-1] = False
     clump_nums1 = clump_nums[mask1]
     f1 = f[mask1]
+    iorder1 = iorder[mask1]
+    particle_nums1 = particle_nums[mask1]
     
     # Get units set up
     m_unit = f1['mass'].units
@@ -199,9 +247,12 @@ def calc_clump_pars(f, clump_nums):
     rho = SimArray(np.zeros(n_clumps), rho_unit) # density
     r_clump = SimArray(np.zeros(n_clumps), l_unit) # clump radius (size)
     
-    # index of each particle
+    # index of each particle (in this file)
     particle_ids = []
+    # universal identity of each particle
+    particle_iord = []
     
+    # loop over the clumps
     for i in range(n_clumps):
         
         mask2 = (clump_nums1 == i+1)
@@ -235,8 +286,11 @@ def calc_clump_pars(f, clump_nums):
         T[i] = p_T.sum()/N[i]
         rho[i] = p_rho.sum()/N[i]
         
+        particle_ids.append(particle_nums1[mask2])
+        particle_iord.append(iorder1[mask2])
+        
     out_dict = {'m':m, 'N':N, 'pos':pos, 'r':r, 'v':v, 'L':L, 'T':T, 'rho':rho,\
-    'r_clump': r_clump}
+    'r_clump': r_clump, 'ids': particle_ids, 'iord': particle_iord}
     
     return out_dict
 
@@ -375,8 +429,8 @@ def find_clumps(f, n_smooth=32, param=None, arg_string=None, seed=None):
     #p = subprocess.Popen(command, shell=True, stdout=logfile, stderr=logfile)
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
-#    for line in iter(p.stdout.readline, ''):
-#        print line,
+    for line in iter(p.stdout.readline, ''):
+        print line,
     p.wait()
     
     # Load clumps
