@@ -27,38 +27,57 @@ def multilink(link_list):
     
     clump_list = []
     
-    iStep = 0
+    iStart = 0
     
-    while iStep < n_links:
+    while iStart < n_links:
         
-        pairs0 = link_list[iStep]
-        new_mask = pairs0[:,0] == -1
-        new_iord = pairs0[new_mask,1]
+        if link_list[iStart] is not None:
         
-        for iord0 in new_iord:
-            
-            t = iStep + 1
-            clump = [ [iord0, t] ]
-            
-            while t < n_links:
+            pairs0 = link_list[iStart]
+            new_mask = pairs0[:,0] == -1
+            new_iord = pairs0[new_mask,1]
+        
+            for iord0 in new_iord:
                 
-                pairs1 = link_list[t]
-                iord = clump[-1][0]
+                t = iStart + 1
+                iPair = iStart + 1
+                # Initialize a new clump
+                clump = [ [iord0, t] ]
                 
-                new_ind = np.nonzero(pairs1[:,0] == iord)[0]
-                if len(new_ind) > 0:
-                    # The clump links to something in the next timestep
-                    new_ind = int(new_ind)
-                    # Increment the time step
-                    t += 1
-                    clump.append([pairs1[new_ind, 1], t])
+                print 'new clump'
+                print iord0
+                
+                while iPair < n_links:
                     
-                else:
-                    # The clump links to nothing.  It has died
-                    clump_list.append(np.array(clump))
-                    break
+                    pairs1 = link_list[iPair]
+                    
+                    if pairs1 is None:
+                        # There are no clumps at this time step
+                        break
+                    
+                    t = iPair + 1
+                    iord = clump[-1][0]
+                    
+                    new_ind = np.nonzero(pairs1[:,0] == iord)[0]
+                    print new_ind
+                    if len(new_ind) > 0:
+                        # The clump links to something in the next timestep
+                        new_ind = int(new_ind)
+                        print new_ind
+                        # Add the new index to the clump
+                        #clump.append([pairs1[new_ind, 1], t])
+                        clump.append([new_ind, t])
+                        # Increment the time step
+                        iPair += 1
+                        
+                    else:
+                        # The clump links to nothing.  It has died
+                        break
+                    
+                print 'saving clump'
+                clump_list.append(np.array(clump))
                 
-        iStep += 1
+        iStart += 1
                 
     return clump_list
 
