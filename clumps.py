@@ -21,26 +21,112 @@ import matplotlib.pyplot as plt
 # 'Internal' packages
 import isaac
 
-def link_clumps(clump_pars1, clump_pars2):
+def multilink(link_list):
+    
+    n_links = len(link_list)
+    
+    clump_list = []
+    
+    iStep = 0
+    
+    while iStep < n_links:
+        
+        pairs0 = link_list[iStep]
+        new_mask = pairs0[:,0] == -1
+        new_iord = pairs0[new_mask,1]
+        
+        for iord0 in new_iord:
+            
+            t = iStep + 1
+            clump = [ [iord0, t] ]
+            
+            while t < n_links:
+                
+                pairs1 = link_list[t]
+                iord = clump[-1][0]
+                
+                new_ind = np.nonzero(pairs1[:,0] == iord)[0]
+                if len(new_ind) > 0:
+                    # The clump links to something in the next timestep
+                    new_ind = int(new_ind)
+                    # Increment the time step
+                    t += 1
+                    clump.append([pairs1[new_ind, 1], t])
+                    
+                else:
+                    # The clump links to nothing.  It has died
+                    clump_list.append(np.array(clump))
+                    break
+                
+        iStep += 1
+                
+    return clump_list
+
+def link_clumps(clump_pars1, clump_pars2, link_thresh = 0.3):
     
     n1 = len(clump_pars1['iord'])
     n2 = len(clump_pars2['iord'])
     
-    new_clump_num = np.zeros(n1, dtype=int)
-    candidates = np.zeros(n2, dtype=int)
+    iord_list1 = list(clump_pars1['iord'])
+    iord_list2 = list(clump_pars2['iord'])
     
-    for i, iord1 in enumerate(clump_pars1['iord']):
-        
-        for j, iord2 in enumerate(clump_pars2['iord']):
+    # Used to store how many particles clumps have in common
+    connections = np.zeros([n1, n2], dtype=int)
+    
+    # Calculate the number of connections common to the clumps in clump_pars1
+    # and the clumps in clump_pars2
+    # Loop over the first set of clumps
+    for i, iord1 in enumerate(iord_list1):
+        # Loop over the second set of clumps
+        iord1.sort()
+        npart1 = len(iord1)
+        for j, iord2 in enumerate(iord_list2):
             
-            # Calculate the number of particles common to clumps i and j
-            candidates[j] = len(np.intersect1d(iord1, iord2))
-        
-        new_clump_num[i] = candidates.argmax()
-        print (candidates>0).sum()
-        
-        
-    return new_clump_num
+            # Find which particles are common to clump[i] in pars1 and clump[j]
+            # in pars2
+            intersect = np.intersect1d(iord1, iord2, assume_unique=True)
+            # Save how many are shared in the 2 clumps
+            connections[i,j] = len(intersect)
+            # Now only retain particles that are not common to the clumps
+            # IE, we know where these particles end up, we can stop checking
+            # them
+            iord1 = np.setdiff1d(iord1, intersect, assume_unique=True)
+            iord2 = np.setdiff1d(iord2, intersect, assume_unique=True)
+            iord_list2[j] = iord2
+            
+            if len(iord1) < 1:
+                # There are no more particles to look at in the original clump                
+                break
+            
+        # Now ignore any connections where number of particles shared between
+        # clumps less than link_thresh * (num. part. in clump 1)
+        thresh_mask = connections[i,:] < link_thresh * npart1
+        connections[i, thresh_mask] = 0
+    
+    # Find the clump in clump_pars2 that shares the most number of members for
+    # a clump in clump_pars1.  This gives us the children of the clumps in
+    # clump_pars1
+    col_ind = connections.argmax(1)
+    # Set all others to 0
+    mask = np.zeros([n1,n2], dtype=bool)
+    row_ind = np.arange(n1)
+    mask[row_ind, col_ind] = True
+    connections[~mask] = 0
+    
+    # The clumps in clump_pars2 may have multiple parents.  Select the parent
+    # which shares the most particles in common (note, if this isn't the
+    # child of any clump, parent_index will always be 0)
+    parent_index = connections.argmax(0)
+    # and find the number of particles inherited from the parent
+    n_inherit = connections.max(0)
+    
+    # Demand to inherit at least 1 particle from the parent
+    parent_index[n_inherit < 1] = -1
+    
+    # Now create the clump pairs
+    clump_pairs = np.array( [parent_index, np.arange(n2)] ).T
+
+    return clump_pairs
         
 
 def clump_im(f, clump_array, width, qty='rho', resolution=1200, clim=None, clump_min=None):
@@ -176,38 +262,23 @@ def batch_clump_pars(flist, clump_list):
     
     return clump_pars
 
-def calc_clump_pars(f, clump_nums, iorder=None):
+def calc_clump_pars(f, clump_nums):
     
-    
-    if isinstance(f, str):
-        
-        f = pynbody.load(f)
-        
-    if iorder is not None:
-        # The user has set iorder        
-        if isinstance(iorder, str):
-            # Assume this is a filename to the iorder file
-            iorder = np.genfromtxt(iorder, int, skip_header=1)
-            
-    else:
-        
-        # Try to load iorder
-        iorder = f.filename + '.iord'
-        
-        if os.path.exists(iorder):
-            
-            print 'Loading ' + iorder
-            iorder = np.genfromtxt(iorder, int, skip_header=1)
-            
-        else:
-            
-            # No iorder could be loaded, make a default one
-            iorder = np.arange(len(f))
-        
     if clump_nums.max() < 1:
         # Return none if there are no clumps
-    
         return
+    
+    if isinstance(f, str):        
+        f = pynbody.load(f)
+        
+    try:
+        
+        iorder = f['iord']
+        
+    except KeyError:
+        
+        print 'Warning.  iorder not found.  Assuming 0,1,2,3...'
+        iorder = np.arange(len(f))
         
     particle_nums = np.arange(len(f))
         
