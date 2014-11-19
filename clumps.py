@@ -21,6 +21,75 @@ import matplotlib.pyplot as plt
 # 'Internal' packages
 import isaac
 
+def blank_clump(clump_pars, nt=1):
+    
+    ignore_keys = ['iord', 'ids']
+    keys = clump_pars.keys()
+    
+    # Remove the ignored keys
+    for ignore_key in ignore_keys:
+        
+        if ignore_key in keys:
+            
+            keys.remove(ignore_key)
+            
+    clump = {}
+    
+    for key in keys:
+        
+        # Load the current value
+        val = clump_pars[key]
+        # All values should be nd arrays or nd simarrays
+        shape = list(val.shape)
+        shape[0] = nt
+        # Initialize a blank array with the same dtype
+        val_array = np.ones(shape) * np.nan
+        # Check if there are units
+        if pynbody.units.has_units(val):
+            
+            val_array = SimArray(val_array, val.units)
+            
+        clump[key] = val_array
+        
+    return clump
+        
+
+def build_clumps(multilink_list, clump_pars_list):
+    
+    clump_list = []
+    
+    nt = len(clump_pars_list)
+    nclumps = len(multilink_list)
+    
+    # Start by finding the first non-zero clump_pars (ie, first timestep with
+    # clumps)
+    for i, clump_pars in enumerate(clump_pars_list):
+        
+        if clump_pars is not None:
+            
+            iFirstClump = i
+            break
+        
+    
+    # Now fill in the clumps
+    for iClump in range(nclumps):
+        
+        # Initialize a blank clump
+        clump = blank_clump(clump_pars_list[iFirstClump], nt)
+        
+        for iord, iStep in multilink_list[iClump]:
+            
+            clump_pars = clump_pars_list[iStep]
+            
+            for key in clump.keys():
+                
+                clump[key][iStep] = clump_pars[key][iord]
+                
+        clump_list.append(clump)
+        
+    return clump_list
+        
+
 def multilink(link_list):
     
     n_links = len(link_list)
@@ -44,9 +113,6 @@ def multilink(link_list):
                 # Initialize a new clump
                 clump = [ [iord0, t] ]
                 
-                print 'new clump'
-                print iord0
-                
                 while iPair < n_links:
                     
                     pairs1 = link_list[iPair]
@@ -59,11 +125,9 @@ def multilink(link_list):
                     iord = clump[-1][0]
                     
                     new_ind = np.nonzero(pairs1[:,0] == iord)[0]
-                    print new_ind
                     if len(new_ind) > 0:
                         # The clump links to something in the next timestep
                         new_ind = int(new_ind)
-                        print new_ind
                         # Add the new index to the clump
                         #clump.append([pairs1[new_ind, 1], t])
                         clump.append([new_ind, t])
@@ -74,15 +138,46 @@ def multilink(link_list):
                         # The clump links to nothing.  It has died
                         break
                     
-                print 'saving clump'
                 clump_list.append(np.array(clump))
                 
         iStart += 1
                 
     return clump_list
-
-def link_clumps(clump_pars1, clump_pars2, link_thresh = 0.3):
     
+def _parallel_link_clumps(args):
+    
+    return link_clumps(*args)
+    
+def batch_link(clump_pars_list):
+    
+    arg_list = zip(clump_pars_list[0:-1], clump_pars_list[1:])
+    nproc = cpu_count()
+    
+    pool = Pool(nproc)
+    link_list = pool.map(_parallel_link_clumps, arg_list)
+    pool.close()
+    pool.join()
+    
+    return link_list
+
+def link_clumps(clump_pars1, clump_pars2, link_thresh = 0.2):
+    
+    if clump_pars2 is None:
+        # there are no clumps in the second time step.  Any clumps in the first
+        # time step must have died.  Return None
+        return
+    
+    if clump_pars1 is None:
+        # Any clumps in the second time step are new.  This is handled by 
+        # saying their parents are -1
+        n2 = len(clump_pars2['iord'])
+        clump_pairs = np.zeros([n2, 2], dtype=int)
+        clump_pairs[:,0] = -1
+        clump_pairs[:,1] = np.arange(n2)
+        
+        return clump_pairs
+    
+    # number of clumps in each time step
     n1 = len(clump_pars1['iord'])
     n2 = len(clump_pars2['iord'])
     
