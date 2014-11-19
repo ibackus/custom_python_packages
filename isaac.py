@@ -292,6 +292,7 @@ def sigma(snapshot, bins=100):
     
     return sig, r_bins
     
+    
 def Q2(snapshot, molecular_mass = 2.0, bins=100, max_height=None):
     
     # Physical constants
@@ -522,7 +523,155 @@ def set_units(x, units):
             x_out = SimArray(x, units)
         
     return x_out
+    
+def setup_param(param, snapshot=None, r_orb=1.0, n_orb=10.0, n_image=None, n_snap=100, \
+n_check=None):
+    """
+    Sets up the following for a .param file:
+        
+        nSteps
+        dDumpFrameStep
+        iOutInterval
+        iCheckInterval
+        
+    **ARGUMENTS**
+    
+    param : str or param_dict (see isaac.configparser, configsave)
+        parameter file for the simulation, must already have dDelta and units
+        set properly
+        IF a str, assumed to be a filename
+    snapshot : str or TipsySnap(see pynbody) or None
+        Snapshot for the simulation.  Needed to estimate the outer orbital
+        period.  
+        IF a str, assumed to be a filename
+        IF None, the file pointed to by param is used
+    r_orb : float
+        radius to calculate the outer orbital period at as a fraction of the
+        radius of the farthest out particle.  Must be between 0 and 1
+    n_orb : float
+        number of outer orbital periods to run simulation for
+    n_image : int or None
+        Total number of frames to dump (ie, dDumpFrameStep)
+        If None, defaults to n_snap
+    n_snap : int
+        Total number of simulation outputs
+    n_check : int or None
+        Total number of simulation checkpoints.  If None, defaults to n_snap
+    """
+    
+    if (r_orb > 1) | (r_orb < 0):
+        
+        raise ValueError, 'r_orb must be between 0 and 1'
+    
+    if isinstance(snapshot, str):
+        
+        # A filename has been passed, not a tipsy snapshot
+        snapshot = pynbody.load(snapshot)
+        
+    if isinstance(param, str):
+        
+        # A filename has been passed.  Load the dictionary
+        param = configparser(param, 'param')
+        
+    else:
+        
+        # Copy so as to not overwrite the input dict
+        param = copy.deepcopy(param)
+        
+    R_max = r_orb * snapshot.g['rxy'].max()
+    M_star = snapshot.s['mass']
+    
+    # Read in .param stuff
+    l_unit = '{} kpc'.format(param['dKpcUnit'])
+    m_unit = '{} Msol'.format(SimArray(param['dMsolUnit'], 'Msol'))
+    
+    # Outer radius and star mass in simulation units
+    r = float(R_max.in_units(l_unit))
+    M = float(M_star.in_units(m_unit))
+    
+    # Calculate the number of time steps to use
+    dt = param['dDelta']
+    period = 2*np.pi*np.sqrt(r**3/M)
+    N = int(np.round(n_orb * period/dt))
+    param['nSteps'] = N
+    
+    # Calculate how often to output snapshots, frames, checkpoints
+    if n_check is None:
+        
+        n_check = n_snap
+        
+    if n_image is None:
+        
+        n_image = n_snap
+        
+    param['dDumpFrameStep'] = int(N/n_image)
+    param['iOutInterval'] = int(N/n_snap)
+    param['iCheckInterval'] = int(N/n_check)
+    
+    return param
             
+def make_submission_script(param_name, directory=None, nodes=1, walltime=12, changa='ChaNGa_uw_mpi', jobname='changasim', scriptname='subber.sh', backfill=True):
+    """
+    Creates a submission script for qsub.  This is highly platform dependent
+    """
+    
+    # Set up simulation directory
+    if directory is None:
+        
+        directory = os.getcwd()
+        
+    # Load param file        
+    param = configparser(param_name, 'param')
+    fprefix = param['achOutName']
+    
+    # Format walltime for qsub
+    seconds = int(walltime*3600)
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    walltime_str = '{0:02d}:{1:02d}:{2:02d}'.format(h,m,s)
+    
+    # Format walltime for changa
+    walltime_min = int(walltime*60)
+    
+    # Open submission script
+    subber = open(scriptname,'w')
+    
+    # Write to submission script
+    subber.write('#!/bin/bash\n\
+#PBS -N {0}\n\
+#PBS -j oe\n\
+#PBS -m be\n\
+#PBS -M ibackus@gmail.com\n\
+#PBS -l nodes={1}:ppn=12,feature=12core\n\
+#PBS -l walltime={2}\n\
+#PBS -V\n'.format(jobname, nodes, walltime_str))
+    
+    if backfill:
+        
+        subber.write('#PBS -q bf\n')
+        
+    subber.write('module load gcc_4.4.7-ompi_1.6.5\n')
+    subber.write('export MX_RCACHE=0\n')
+    
+    subber.write('workdir={0}\n'.format(directory))
+    subber.write('cd $workdir\n')
+    subber.write('changbin=$(which {0})\n'.format(changa))
+    subber.write('if [ -e "lastcheckpoint" ]\n\
+then\n\
+    echo "lastcheckpoint exists -- restarting simulation..."\n\
+    last=`cat lastcheckpoint`\n\
+    mpirun --mca mtl mx --mca pml cm $changbin +restart {0}.chk$last +balancer MultistepLB_notopo -wall {2} $workdir/{1} >> $workdir/{0}.out 2>&1\n\
+else\n\
+    echo "lastcheckpoint doesnt exist -- starting new simulation..."\n\
+    mpirun --mca mtl mx --mca pml cm $changbin -D 3 +consph +balancer MultistepLB_notopo -wall {2} $workdir/{1} >& $workdir/{0}.out\n\
+fi\n\
+'.format(fprefix, param_name, walltime_min))
+    
+    subber.close()
+    
+    # Make submission script executable
+    os.system('chmod a+rwx {}'.format(scriptname))
+
 def make_param(snapshot, filename=None):
     """
     Generates a default param dictionary.  Can be saved using isaac.configsave
