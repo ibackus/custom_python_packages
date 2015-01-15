@@ -336,7 +336,8 @@ def Q2(snapshot, molecular_mass = 2.0, bins=100, max_height=None):
     
     return r_edges, Q_binned
     
-def Q(snapshot, molecular_mass = 2.0, bins=100, max_height=None):
+def Q(snapshot, molecular_mass = 2.0, bins=100, max_height=None, \
+use_velocity=False):
     """
     Calculates the Toomre Q as a function of r, assuming radial temperature
     profile and kappa ~= omega
@@ -348,6 +349,10 @@ def Q(snapshot, molecular_mass = 2.0, bins=100, max_height=None):
         Mean molecular mass (for sound speed).  Default = 2.0
     bins : int or array
         Either the number of bins or the bin edges
+    use_velocity : Bool
+        Determines whether to use the particles' velocities to calculate orbital
+        velocity.  Useful if the circular orbital velocities are set in the
+        snapshot.
         
     ** RETURNS **
     
@@ -364,8 +369,16 @@ def Q(snapshot, molecular_mass = 2.0, bins=100, max_height=None):
     sig, r_edges = sigma(snapshot, bins)
     # Calculate keplerian angular velocity (as a proxy for the epicyclic
     # frequency, which is a noisy calculation)
-    p = pynbody.analysis.profile.Profile(snapshot, bins=r_edges)    
-    omega = p['omega']
+    if use_velocity:
+        
+        dummy, omega, dummy2 = binned_mean(snapshot.g['rxy'], \
+        snapshot.g['vt']/snapshot.g['rxy'], binedges=r_edges)
+    
+    else:
+        
+        p = pynbody.analysis.profile.Profile(snapshot, bins=r_edges)    
+        omega = p['omega']
+        
     # Calculate sound speed
     m = match_units(molecular_mass,'m_p')[0]
     c_s_all = np.sqrt(kB*snapshot.g['temp']/m)

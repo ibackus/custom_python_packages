@@ -17,9 +17,47 @@ import subprocess
 import glob
 import os
 import matplotlib.pyplot as plt
+import re
 
 # 'Internal' packages
 import isaac
+
+def get_fnames(fprefix, directory=None):
+    """
+    Finds the filenames of ChaNGa simulation outputs.  They are formatted as:
+        fprefix.000000
+    i.e., fprefix followed by '.' and a 6 digit number
+    
+    **ARGUMENTS**
+    
+    fprefix : str
+        Prefix of the simulation outputs
+    directory : str (optional)
+        Directory to search through.  Default is current working directory
+        
+    **RETURNS**
+    
+    fnames : list
+        A list containing the matching filenames
+    """
+    
+    fnames = []
+    
+    if directory is not None:
+        
+        fprefix = os.path.join(directory, fprefix)
+        
+    repattern = '^' + fprefix + '.(?:(?<!\d)\d{6}(?!\d))$'
+        
+    for fname in glob.glob(fprefix + '.*'):
+        
+        if re.search(repattern, fname) is not None:
+            
+            fnames.append(fname)
+            
+    fnames.sort()
+    
+    return fnames
 
 def blank_clump(clump_pars, nt=1):
     
@@ -73,6 +111,7 @@ def build_clumps(multilink_list, clump_pars_list):
     
     # Now fill in the clumps
     for iClump in range(nclumps):
+        print iClump
         
         # Initialize a blank clump
         clump = blank_clump(clump_pars_list[iFirstClump], nt)
