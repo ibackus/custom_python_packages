@@ -22,7 +22,78 @@ import re
 # 'Internal' packages
 import isaac
 
-def clump_tracker(fprefix, param=None, directory=None):
+def clump_tracker(fprefix, param=None, directory=None, nsmooth=32):
+    """
+    Finds and tracks clumps over a simulation with multiple time steps and
+    calculates various physical properties of the clumps.
+    
+    Runs all the steps necessary to find/track clumps, these are:
+    
+    get_fnames
+    pFind_clumps
+    pClump_properties
+    pLink2
+    multilink
+    build_clumps
+    
+    If the iord property is not found, only the clump (halo) finder will work
+    Everything after pFind_clumps will fail.
+    
+    **ARGUMENTS**
+    
+    fprefix : str
+        Prefix of the simulation outputs
+    param : str or dict (recommended)
+        Either the filename of a .param file for the simulation or a param
+        dict (see isaac.configparser)
+    directory : str (optional)
+        Directory to search through.  Default is current working directory
+    nsmooth : int (optional)
+        Number of nearest neighbors used for particle smoothing in the
+        simulation.  This is used in the definition of a density threshold
+        for clump finding.
+        
+    **RETURNS**
+    
+    clump_list : list
+        A list containing dictionaries for all clumps found in the simulation
+        See clump_properties for a list of the properties calculated for clumps
+    """
+    
+    if isinstance(param, str):
+        
+        param = isaac.configparser(param, 'param')
+    
+    # Get a list of all snapshot files
+    fnames = get_fnames(fprefix, directory)
+    nfiles = len(fnames)
+    
+    # Run the clump (halo) finder
+    print "\n\nRunning clump finder on {} files\n\n".format(nfiles)
+    clumpnum_list = pFind_clumps(fnames, nsmooth, param)
+    nclumps = np.zeros(nfiles, dtype=int)
+    for i, clumpnums in clumpnum_list:
+        
+        nclumps[i] = clumpnums.max()
+        
+    if nclumps.max() <= 0:
+        
+        print 'No clumps found'
+        return []
+    
+    # Calculate the physical properties of the clumps
+    print "\n\nCalculating the physical of properties of clumps\n\n"
+    properties = pClump_properties(fnames, clumpnum_list)
+    
+    # Link clumps on consecutive time-steps
+    print "\n\nLinking Clumps\n\n"
+    link_list = pLink2(properties)
+    # Link on multiple time-steps
+    multilink_list = multilink(link_list)
+    # Build the clumps
+    clump_list = build_clumps(multilink_list, properties)
+    
+    return clump_list
     
 
 def get_fnames(fprefix, directory=None):
