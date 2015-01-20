@@ -22,6 +22,9 @@ import re
 # 'Internal' packages
 import isaac
 
+def clump_tracker(fprefix, param=None, directory=None):
+    
+
 def get_fnames(fprefix, directory=None):
     """
     Finds the filenames of ChaNGa simulation outputs.  They are formatted as:
@@ -60,6 +63,9 @@ def get_fnames(fprefix, directory=None):
     return fnames
 
 def blank_clump(clump_pars, nt=1):
+    """
+    Generates a blank clump dictionary, using clump_pars
+    """
     
     ignore_keys = ['iord', 'ids']
     keys = clump_pars.keys()
@@ -93,6 +99,25 @@ def blank_clump(clump_pars, nt=1):
         
 
 def build_clumps(multilink_list, clump_pars_list):
+    """
+    Builds a list of clump dictionaries.  The clump dictionaries contain various
+    properties as a function of time for the different clumps.
+    
+    **ARGUMENTS**
+    
+    multilink_list : list
+        A list of clump-link arrays (output of multilink)
+    clump_pars_list : list
+        List of dictionaries containing clump properties for all clumps on a
+        given time step (see pClump_properties)
+        
+    **RETURNS**
+    
+    clump_list : list
+        A list of clump dictionaries.  Each clump dictionary gives various
+        physical properties for a clump as a function of time.  A value of NaN
+        means the clump was not present at that time step.
+    """
     
     clump_list = []
     
@@ -130,6 +155,25 @@ def build_clumps(multilink_list, clump_pars_list):
         
 
 def multilink(link_list):
+    """
+    Links clumps on multiple time steps.
+    
+    Given the output of link2 or pLink2 for multiple time-steps, this determines
+    every clump's ID as a function of time-step.
+    
+    **ARGUMENTS**
+    
+    link_list : list
+        A list of link arrays.  link_list[i] contains the links between time
+        step i and i+1.
+        ie: link_list[i] = link2(clump_pars_list[i], clump_pars_list[i+1])
+        Same as the output from pLink2
+        
+    **RETURNS**
+    
+    clumpid_list : list
+        A list of 2D arrays.  Each array gives pairs of (clumpID, time-step)
+    """
     
     n_links = len(link_list)
     
@@ -183,23 +227,70 @@ def multilink(link_list):
                 
     return clump_list
     
-def _parallel_link_clumps(args):
+def _parallel_link2(args):
+    """
+    A parallel wrapper for link2
+    """
     
-    return link_clumps(*args)
+    return link2(*args)
     
-def batch_link(clump_pars_list):
+def pLink2(clump_pars_list):
+    """
+    A parallel (batch) implementation of links2 for linking clumps in
+    consecutive time-steps.  
+    
+    **ARGUMENTS**
+    
+    clump_pars_list : list
+        A list of dictionaries containing the properties of clumps.  Each
+        element of the list is a dictio:nary for a single time step.
+        (see pClump_properties)
+        
+    **RETURNS**
+    
+    link_list : list
+        A list of link arrays.  link_list[i] contains the links between time
+        step i and i+1.
+        ie: link_list[i] = link2(clump_pars_list[i], clump_pars_list[i+1])
+    """
     
     arg_list = zip(clump_pars_list[0:-1], clump_pars_list[1:])
     nproc = cpu_count()
     
     pool = Pool(nproc)
-    link_list = pool.map(_parallel_link_clumps, arg_list)
+    link_list = pool.map(_parallel_link2, arg_list)
     pool.close()
     pool.join()
     
     return link_list
 
-def link_clumps(clump_pars1, clump_pars2, link_thresh = 0.2):
+def link2(clump_pars1, clump_pars2, link_thresh = 0.2):
+    """
+    'Links' the clumps in two consecutive timesteps.  i.e., a clump numbered
+    10 in one time step might be numbered 15 in the next.  Requires the particle
+    iord (ie, particle ID)
+    
+    **ARGUMENTS**
+    
+    clump_pars1 : dict
+        Dict containing the properties of the clumps in time-step 1 
+        (see clump_properties)
+    clump_pars2 : dict
+        Dict containing the properties of the clumps in time-step 2 
+        (see clump_properties)
+    link_thresh : int (optional)
+        The minimum fraction of particles in clump i at time 1 which must end
+        up in clump j at time 2 to consider the clumps 'linked'
+        
+    **RETURNS**
+    
+    clump_pairs : array
+        2D numpy array organized according to (parent index, clump number)
+        where clump number is the number of a clump in time 2 and parent index
+        is the number of it's "parent" in time-step 1 (ie, that same clump's
+        ID in time-step 1)
+        A parent index of -1 corresponds to no parent (a new clump)
+    """
     
     if clump_pars2 is None:
         # there are no clumps in the second time step.  Any clumps in the first
@@ -398,24 +489,76 @@ def clump_im(f, clump_array, width, qty='rho', resolution=1200, clim=None, clump
     return im_color
     
 def _parallel_clump_pars(args):
+    """
+    A wrapper to parallelize clump_properties
+    """
     
-    return calc_clump_pars(*args)
+    return clump_properties(*args)
     
-def batch_clump_pars(flist, clump_list):
+def pClump_properties(flist, clumpnum_list):
+    """
+    A parallel (batch) implementation of clump_properties.  Calculates the 
+    physical properties of clumps in a list of snapshots.
+    
+    **ARGUMENTS**
+    
+    flist : list
+        A list of tipsy snapshots or filenames pointing to snapshots.
+    clumpnum_list : list
+        A list of arrays (one per snapshot) which define the clump number
+        each particle belongs to (see pFind_clumps)
+    
+    **RETURNS**
+    
+    properties : list
+        A list of dictionaries which contain the clump properties for every
+        simulation (see clump_properties)
+    """
     
     nproc = cpu_count()
     
-    arg_list = zip(flist, clump_list)
+    arg_list = zip(flist, clumpnum_list)
     
     pool = Pool(nproc)
     
-    clump_pars = pool.map(_parallel_clump_pars, arg_list)
+    properties = pool.map(_parallel_clump_pars, arg_list)
     pool.close()
     pool.join()
     
-    return clump_pars
+    return properties
 
-def calc_clump_pars(f, clump_nums):
+def clump_properties(f, clump_nums):
+    """
+    Calculates the physical properties of clumps in a snapshot.
+    
+    **ARGUMENTS**
+    
+    f : str -OR- tipsy snapshot
+        Either a tipsy snapshot or a filename pointing to a snapshot
+    clump_nums : array like
+        Clump number that each particle belongs to (see clumps.find_clumps).
+        0 corresponds to not being in a clump.
+    
+    **RETURNS**
+    
+    properties : dict
+        A dictionary containing the physical properties of the clumps.
+        Keys are:
+        
+        'm'         mass
+        'N'         Number of particles
+        'pos'       xyz position
+        'r'         cylindrical radial position
+        'v'         center of mass velocity
+        'L'         Angular momentum relative to clump center of mass
+        'T'         Average temperature
+        'rho'       Average density
+        'r_clump'   Clump radius [not implemented]
+        'ids'       particle IDs in the clump (first particle in simulation is
+                    0, second is 1, etc...)
+        'iord'      Particle iord (a particle's ID for the whole simulation)
+        
+    """
     
     if clump_nums.max() < 1:
         # Return none if there are no clumps
@@ -513,10 +656,10 @@ def calc_clump_pars(f, clump_nums):
         particle_ids.append(particle_nums1[mask2])
         particle_iord.append(iorder1[mask2])
         
-    out_dict = {'m':m, 'N':N, 'pos':pos, 'r':r, 'v':v, 'L':L, 'T':T, 'rho':rho,\
+    properties = {'m':m, 'N':N, 'pos':pos, 'r':r, 'v':v, 'L':L, 'T':T, 'rho':rho,\
     'r_clump': r_clump, 'ids': particle_ids, 'iord': particle_iord}
     
-    return out_dict
+    return properties
 
 def _parallel_find_clumps(args):
     """
@@ -524,7 +667,7 @@ def _parallel_find_clumps(args):
     """    
     return find_clumps(*args)
     
-def batch_clumps2(f_list, n_smooth=32, param=None, arg_string=None):
+def pFind_clumps(f_list, n_smooth=32, param=None, arg_string=None):
     """
     A parallel implementation of find_clumps.  Since SKID is not parallelized
     this can be used to run find_clumps on a set of snapshots from one
@@ -534,11 +677,22 @@ def batch_clumps2(f_list, n_smooth=32, param=None, arg_string=None):
     
     f_list : list
         A list containing the filenames of snapshots OR the tipsy snapshots
+    n_smooth : int (optional)
+        Number of nearest neighbors used for particle smoothing in the
+        simulation.  This is used in the definition of a density threshold
+        for clump finding.
+    param : dict (optional)
+        param dictionary for the simulation (see isaac.configparser)
+    arg_string : str (optional)
+        Additional arguments to be passed to SKID.  Cannot use -tau, -d, -m, -s, -o
+        
         
     **RETURNS**
     
-    clumps : list
-        A list containing the clumps for each snapshot in f_list
+    clumpnum_list : list
+        A list containing the particle clump assignment for every snapshot in 
+        f_list.  clumps[i][j] gives the clump number for particle j in
+        snapshot i.
     """
     # Number of processes to create = number of cores
     n_proc = cpu_count()
@@ -649,8 +803,6 @@ def find_clumps(f, n_smooth=32, param=None, arg_string=None, seed=None):
     
     command = 'totipnat < {} | skid -tau {:.2e} -d {:.2e} -m {:d} -s {:d} -o {}'\
     .format(f_name, tau, rho_min, n_smooth, n_smooth, f_prefix)
-#    print '\n', command
-    #p = subprocess.Popen(command, shell=True, stdout=logfile, stderr=logfile)
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
     for line in iter(p.stdout.readline, ''):
