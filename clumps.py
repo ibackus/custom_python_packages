@@ -22,7 +22,7 @@ import re
 # 'Internal' packages
 import isaac
 
-def clump_tracker(fprefix, param=None, directory=None, nsmooth=32):
+def clump_tracker(fprefix, param=None, directory=None, nsmooth=32, verbose=True):
     """
     Finds and tracks clumps over a simulation with multiple time steps and
     calculates various physical properties of the clumps.
@@ -36,22 +36,23 @@ def clump_tracker(fprefix, param=None, directory=None, nsmooth=32):
     multilink
     build_clumps
     
-    If the iord property is not found, only the clump (halo) finder will work
-    Everything after pFind_clumps will fail.
+    If the iord property is not found, the linking will only work if the number
+    of particles remains constant through the simulation
     
     **ARGUMENTS**
     
     fprefix : str
         Prefix of the simulation outputs
-    param : str or dict (recommended)
-        Either the filename of a .param file for the simulation or a param
-        dict (see isaac.configparser)
+    param : str (recommended)
+        Filename of a .param file for the simulation
     directory : str (optional)
         Directory to search through.  Default is current working directory
     nsmooth : int (optional)
         Number of nearest neighbors used for particle smoothing in the
         simulation.  This is used in the definition of a density threshold
         for clump finding.
+    verbose : bool (optional)
+        Verbosity flag.  Default is True
         
     **RETURNS**
     
@@ -60,33 +61,30 @@ def clump_tracker(fprefix, param=None, directory=None, nsmooth=32):
         See clump_properties for a list of the properties calculated for clumps
     """
     
-    if isinstance(param, str):
-        
-        param = isaac.configparser(param, 'param')
-    
     # Get a list of all snapshot files
     fnames = get_fnames(fprefix, directory)
     nfiles = len(fnames)
     
     # Run the clump (halo) finder
-    print "\n\nRunning clump finder on {} files\n\n".format(nfiles)
-    clumpnum_list = pFind_clumps(fnames, nsmooth, param)
+    if verbose: print "\n\nRunning clump finder on {} files\n\n".format(nfiles)
+    clumpnum_list = pFind_clumps(fnames, nsmooth, param, verbose=verbose)
     nclumps = np.zeros(nfiles, dtype=int)
-    for i, clumpnums in clumpnum_list:
+    
+    for i, clumpnums in enumerate(clumpnum_list):
         
         nclumps[i] = clumpnums.max()
         
     if nclumps.max() <= 0:
         
-        print 'No clumps found'
+        if verbose: print 'No clumps found'
         return []
     
     # Calculate the physical properties of the clumps
-    print "\n\nCalculating the physical of properties of clumps\n\n"
+    if verbose: print "\n\nCalculating the physical of properties of clumps\n\n"
     properties = pClump_properties(fnames, clumpnum_list)
     
     # Link clumps on consecutive time-steps
-    print "\n\nLinking Clumps\n\n"
+    if verbose: print "\n\nLinking Clumps\n\n"
     link_list = pLink2(properties)
     # Link on multiple time-steps
     multilink_list = multilink(link_list)
@@ -624,7 +622,8 @@ def clump_properties(f, clump_nums):
         'L'         Angular momentum relative to clump center of mass
         'T'         Average temperature
         'rho'       Average density
-        'r_clump'   Clump radius [not implemented]
+        'r_clump'   Clump radius.  Sqrt of mass averaged particle distance squared
+                    (from the center of mass).  IE: r = sqrt( sum(mr^2)/sum(m))
         'ids'       particle IDs in the clump (first particle in simulation is
                     0, second is 1, etc...)
         'iord'      Particle iord (a particle's ID for the whole simulation)
@@ -724,6 +723,13 @@ def clump_properties(f, clump_nums):
         T[i] = p_T.sum()/N[i]
         rho[i] = p_rho.sum()/N[i]
         
+        # Clump radius
+        try:
+            r_clump[i] = np.sqrt((p_mass*( (cm_pos**2).sum(1) )).sum()/m[[i]])
+        except pynbody.units.UnitsException:
+            print 'i is: {}'.format(i)
+            return p_mass, cm_pos, m
+        
         particle_ids.append(particle_nums1[mask2])
         particle_iord.append(iorder1[mask2])
         
@@ -738,7 +744,7 @@ def _parallel_find_clumps(args):
     """    
     return find_clumps(*args)
     
-def pFind_clumps(f_list, n_smooth=32, param=None, arg_string=None):
+def pFind_clumps(f_list, n_smooth=32, param=None, arg_string=None, verbose=True):
     """
     A parallel implementation of find_clumps.  Since SKID is not parallelized
     this can be used to run find_clumps on a set of snapshots from one
@@ -752,10 +758,12 @@ def pFind_clumps(f_list, n_smooth=32, param=None, arg_string=None):
         Number of nearest neighbors used for particle smoothing in the
         simulation.  This is used in the definition of a density threshold
         for clump finding.
-    param : dict (optional)
-        param dictionary for the simulation (see isaac.configparser)
+    param : str (optional)
+        filename for a tipsy .param file
     arg_string : str (optional)
         Additional arguments to be passed to SKID.  Cannot use -tau, -d, -m, -s, -o
+    verbose : bool
+        Verbosity flag.  Default is True
         
         
     **RETURNS**
@@ -773,7 +781,7 @@ def pFind_clumps(f_list, n_smooth=32, param=None, arg_string=None):
     
     for i, f_name in enumerate(f_list):
         
-        arg_list.append([f_name, n_smooth, param, arg_string, i])
+        arg_list.append([f_name, n_smooth, param, arg_string, i, verbose])
         
     print arg_list
     
@@ -787,7 +795,7 @@ def pFind_clumps(f_list, n_smooth=32, param=None, arg_string=None):
     
     return results
 
-def find_clumps(f, n_smooth=32, param=None, arg_string=None, seed=None):
+def find_clumps(f, n_smooth=32, param=None, arg_string=None, seed=None, verbose=True):
     """
     Uses skid (https://github.com/N-BodyShop/skid) to find clumps in a gaseous
     protoplanetary disk.  
@@ -815,8 +823,8 @@ def find_clumps(f, n_smooth=32, param=None, arg_string=None, seed=None):
         Number of particles used in SPH calculations.  Should be the same as used
         in the simulation.  Default = 32
     
-    *param* : dict (optional)
-        param dictionary (see isaac.configparser)
+    *param* : str (optional)
+        filename for a .param file for the simulation
     
     *arg_string* : str (optional)
         Additional arguments to be passed to skid.  Cannot use -tau, -d, -m, -s, -o
@@ -825,6 +833,9 @@ def find_clumps(f, n_smooth=32, param=None, arg_string=None, seed=None):
         An integer used to seed the random filename generation for temporary
         files.  Necessary for multiprocessing and should be unique for each
         thread.
+        
+    *verbose* : bool
+        Verbosity flag.  Default is True
     
     **RETURNS**
     
@@ -836,7 +847,7 @@ def find_clumps(f, n_smooth=32, param=None, arg_string=None, seed=None):
     # Parse areguments
     if isinstance(f, str):
         
-        f = pynbody.load(f)
+        f = pynbody.load(f, paramfile=param)
         
     if seed is not None:
         
@@ -862,10 +873,12 @@ def find_clumps(f, n_smooth=32, param=None, arg_string=None, seed=None):
     f_prefix = str(np.random.randint(np.iinfo(int).max))
     f_name = f_prefix + '.std'
     
+    # Save temporary .param file
     if param is not None:
         
         param_name = f_prefix + '.param'
-        isaac.configsave(param, param_name)
+        param_dict = isaac.configparser(param, 'param')
+        isaac.configsave(param_dict, param_name)
         
     f.write(filename=f_name, fmt=pynbody.tipsy.TipsySnap)
         
@@ -876,8 +889,11 @@ def find_clumps(f, n_smooth=32, param=None, arg_string=None, seed=None):
     .format(f_name, tau, rho_min, n_smooth, n_smooth, f_prefix)
     p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
-    for line in iter(p.stdout.readline, ''):
-        print line,
+    if verbose:
+        
+        for line in iter(p.stdout.readline, ''):
+            print line,
+            
     p.wait()
     
     # Load clumps
