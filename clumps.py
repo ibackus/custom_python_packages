@@ -200,6 +200,10 @@ def build_clumps(multilink_list, clump_pars_list, fnames=None, param=None):
     nt = len(clump_pars_list) # number of timesteps
     nclumps = len(multilink_list) # number of clumps
     
+    if nclumps < 1:
+        
+        return clump_list
+    
     # Find the time step of each simulation
     if fnames is not None:
         
