@@ -89,7 +89,7 @@ def clump_tracker(fprefix, param=None, directory=None, nsmooth=32, verbose=True)
     # Link on multiple time-steps
     multilink_list = multilink(link_list)
     # Build the clumps
-    clump_list = build_clumps(multilink_list, properties)
+    clump_list = build_clumps(multilink_list, properties, fnames, param)
     
     return clump_list
     
@@ -167,7 +167,7 @@ def blank_clump(clump_pars, nt=1):
     return clump
         
 
-def build_clumps(multilink_list, clump_pars_list):
+def build_clumps(multilink_list, clump_pars_list, fnames=None, param=None):
     """
     Builds a list of clump dictionaries.  The clump dictionaries contain various
     properties as a function of time for the different clumps.
@@ -179,6 +179,12 @@ def build_clumps(multilink_list, clump_pars_list):
     clump_pars_list : list
         List of dictionaries containing clump properties for all clumps on a
         given time step (see pClump_properties)
+    fnames : list (recommended)
+        A list of the simulation snapshot filenames.  If provided, the time
+        steps are included in the clumps
+    param : str (recommended)
+        Filename of a .param file for the simulation.  Only used if fnames is
+        provided
         
     **RETURNS**
     
@@ -188,10 +194,26 @@ def build_clumps(multilink_list, clump_pars_list):
         means the clump was not present at that time step.
     """
     
+    # Initialize list to contain all the clump objects (dictionaries)
     clump_list = []
     
-    nt = len(clump_pars_list)
-    nclumps = len(multilink_list)
+    nt = len(clump_pars_list) # number of timesteps
+    nclumps = len(multilink_list) # number of clumps
+    
+    # Find the time step of each simulation
+    if fnames is not None:
+        
+        t = SimArray(np.zeros(nt), 'yr')
+        
+        for i, fname in enumerate(fnames):
+            
+            f = pynbody.load(fname, paramname=param)
+            t_unit = SimArray(1, f.infer_original_units('yr'))
+            # Note, for ChaNGa outputs, t0 = t_unit (ie, 1 in simulation units)
+            # To correct for this, we subtract off one time unit from the 
+            # snapshot's time
+            t[i] = f.properties['time'] - t_unit
+            
     
     # Start by finding the first non-zero clump_pars (ie, first timestep with
     # clumps)
@@ -218,6 +240,7 @@ def build_clumps(multilink_list, clump_pars_list):
                 
                 clump[key][iStep] = clump_pars[key][iord]
                 
+        clump['time'] = t.copy()
         clump_list.append(clump)
         
     return clump_list
