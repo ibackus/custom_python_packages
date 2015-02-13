@@ -40,6 +40,9 @@ import ICgen_settings
 import os
 import fnmatch
 
+import pynbody
+SimArray = pynbody.array.SimArray
+
 class database():
     
     """
@@ -152,7 +155,25 @@ class fancy_array(np.ndarray):
         
     def __call__(self, attr):
         
-        outarray = np.ndarray(self.shape, dtype=object)
+        if hasattr_nested(self[0], attr):
+            
+            obj = getattr_nested(self[0], attr)
+            dtype = get_type(obj)
+            
+        else:
+            
+            dtype = object
+            
+        if dtype is SimArray:
+            
+            outarray = SimArray(np.zeros(self.shape), obj.units)
+            
+        else:
+            
+            outarray = np.zeros(self.shape, dtype=dtype)
+        
+        #outarray = np.ndarray(self.shape, dtype=object)
+        #outarray = np.zeros(self.shape, dtype=object)
         
         for i, entry in enumerate(self):
             
@@ -207,5 +228,26 @@ def getattr_nested(obj, attr):
         else:
             return False
     else:
-        return obj         
-            
+        return obj
+        
+def get_type(obj):
+    """
+    Attempts to get the type of a settings object.  These are all numbers,
+    SimArrays, or strings.  Otherwise, they'll just be treated as objects
+    """
+    number_types = [float, int, long, complex]
+    if pynbody.units.has_units(obj):
+        
+        return SimArray
+        
+    elif isinstance(obj, np.ndarray):
+        
+        return obj.dtype
+        
+    for number_type in number_types:
+        
+        if isinstance(obj, number_type):
+        
+            return number_type
+        
+    return object
