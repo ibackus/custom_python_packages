@@ -581,6 +581,8 @@ def clump_im(f, clump_array, width, qty='rho', resolution=1200, clim=None, clump
     
     # Echo the color limits used
     print 'clims used: {}'.format(clim)
+    
+    plt.close(fig1)
         
     return im_color
     
