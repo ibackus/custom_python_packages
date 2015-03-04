@@ -114,10 +114,12 @@ fi\n'.format(int(walltime*60), param_full, outfile)
     
     return script
 
-def subber(directories, scriptname):
+def subber(directories, scriptname, scriptstr=None):
     """
     Submits scriptname, contained in all the directories, to the submission
     queue using qsub.
+    
+    If set, scriptstr will be used as the submission script
     
     **ARGUMENTS**
     
@@ -125,12 +127,21 @@ def subber(directories, scriptname):
         The directory or directories containing the submission script
     scriptname : str
         Script to submit.  Should be present in all the directories
+    scriptstr : str, list, or None
+        Default = None (do nothing!)
+        Either a string containing the PBS submission script (see PBS_script)
+        or a list of such strings.  These will be saved to directories/scriptname
     """
     
     # Make the directories list iterable
     if isinstance(directories, str):
         
         directories = [directories]
+        
+    # Make the submission scripts an iterable list
+    if isinstance(scriptstr, str):
+        
+        scriptstr = [scriptstr] * len(directories)
     
     # Get current working directory
     cwd = os.getcwd()
@@ -145,10 +156,20 @@ def subber(directories, scriptname):
     command = 'qsub ' + scriptname
     
     # Submit all the scripts
-    for fullpath in fullpaths:
+    for i, fullpath in enumerate(fullpaths):
         
         os.chdir(fullpath)
         
+        # If submission scripts have been provided as strings, write them out
+        if scriptstr is not None:
+            
+            f = open(scriptname, 'w')
+            f.write(scriptstr[i])
+            f.close()
+            # Make them executable
+            os.system('chmod a+x ' + scriptname)
+            
+        # Submit the script to PBS
         p = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         # Print output
