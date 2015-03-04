@@ -10,6 +10,109 @@ import glob
 import isaac
 import re
 import subprocess
+import ICgen_utils
+import ICglobal_settings
+global_settings = ICglobal_settings.global_settings
+
+def PBS_script(workdir, param='snapshot.param', nodes=1, ppn=12, walltime=48, \
+jobname='PBS_job', backfill=True, email=None):
+    """
+    A not very robust function to generate PBS submission scripts for ChaNGa
+    jobs on hyak.  Some of the requirements include:
+    
+    mpi version of ChaNGa
+    gcc_4.4.7-ompi_1.6.5
+    PBS (it's on hyak, don't worry)
+    
+    By default, any directory with 'lastcheckpoint' in it will be restarted!
+    If you don't want to just restart a simulation, delete lastcheckpoint from
+    the simulation directory!
+    
+    **ARGUMENTS**
+    
+    *Required*
+    
+    workdir : str
+        Directory of the simulation
+        
+    *Optional*
+    
+    param : str
+        Filename of the .param file (not full path)
+    nodes : int
+        Number of computation nodes to request
+    ppn : int
+        Number of cores per node
+    walltime : float or int
+        Walltime to request in hours
+    jobname : str
+    backfill : bool
+        Boolean flag for whether to use the backfill (default is TRUE)
+    email : str
+        Email address for PBS to send updates to
+        
+    **RETURN**
+    
+    PBS_script : str
+        A string for the PBS script.  Can be saved easily to file
+    """
+    
+    # Setup filenames
+    param_full = os.path.join(workdir, param)
+    outfile = os.path.join(workdir, 'changa.out')
+    fprefix = os.path.splitext(param)[0]
+    
+    # Get changa preset
+    preset = global_settings['changa_presets']['mpi']
+    
+    # Set up the walltime for PBS
+    hours = int(walltime)
+    mins = int((walltime*60)%60)
+    secs = int((walltime*3600)%60)
+    walltime_str = '{0:d}:{1:02d}:{2:02d}'.format(hours,mins,secs)
+    
+    # Write the script!
+    
+    # Start with the shebang
+    script = '#!/bin/bash\n'
+    
+    # Some PBS flags
+    script += '#PBS -N {0}\n\
+#PBS -j oe\n\
+#PBS -l nodes={1}:ppn={2},feature={2}core\n\
+#PBS -l walltime={3}\n\
+#PBS -V\n'.format(jobname, nodes, ppn, walltime_str)
+    
+    # Email stuff
+    if email is not None:
+        
+        script += '#PBS -M {0}\n'.format(email)
+        script += '#PBS -m be\n'
+        
+    # Choose whether to use the backfill
+    if backfill:
+        
+        script += '#PBS -q bf\n'
+        
+    # Runtime initialization
+    script += 'module load gcc_4.4.7-ompi_1.6.5\n\
+export MX_RCACHE=0\n\
+workdir={0}\n\
+cd $workdir\n\
+changbin=$(which {1})\n'.format(workdir, preset[2])
+    
+    # Now assume that we want to restart if there is a checkpoint
+    script += 'if [ -e "lastcheckpoint" ]\n\
+then\n\
+    echo "lastcheckpoint exists -- restarting simulation..."\n\
+    last=`cat lastcheckpoint`\n\
+    mpirun --mca mtl mx --mca pml cm $changbin +restart {0}.chk$last +balancer MultistepLB_notopo -wall {1} {2} >> {3} 2>&1\n'.format(fprefix,int(walltime*60), param_full, outfile)
+    script += 'else\n\
+    echo "lastcheckpoint doesnt exist -- starting new simulation..."\n\
+    mpirun --mca mtl mx --mca pml cm $changbin -D 3 +consph +balancer MultistepLB_notopo -wall {0} {1} >& {2}\n\
+fi\n'.format(int(walltime*60), param_full, outfile)
+    
+    return script
 
 def subber(directories, scriptname):
     """
