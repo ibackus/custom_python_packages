@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 """
+Contains various functions for submitting ChaNGa jobs to hyak.  These are quite
+platform specific and should not be expected to be broadly useful.
+
 Created on Wed Oct 29 13:30:56 2014
 
 @author: ibackus
@@ -10,7 +13,6 @@ import glob
 import isaac
 import re
 import subprocess
-import ICgen_utils
 import ICglobal_settings
 global_settings = ICglobal_settings.global_settings
 
