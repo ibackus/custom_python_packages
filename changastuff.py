@@ -15,6 +15,7 @@ import re
 import subprocess
 import ICglobal_settings
 global_settings = ICglobal_settings.global_settings
+import pynbody
 
 def PBS_script(workdir, param='snapshot.param', nodes=1, ppn=12, walltime=48, \
 jobname='PBS_job', backfill=True, email=None):
@@ -172,20 +173,22 @@ def subber(directories, scriptname, scriptstr=None):
             os.system('chmod a+x ' + scriptname)
             
         # Submit the script to PBS
-        p = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-        # Print output
-        for line in iter(p.stdout.readline, ''):
-            
-            print line,
-            
-        p.wait()
+        print os.getcwd()
+        print command
+#        p = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+#        
+#        # Print output
+#        for line in iter(p.stdout.readline, ''):
+#            
+#            print line,
+#            
+#        p.wait()
         
     # Return to current working directory
     os.chdir(cwd)
 
 def make_continue_sub(simdir='.', paramname='snapshot.param', \
-newparam='continue.param', nSteps=None, nSteps_extra=None, oldsub='subber.sh', \
+newparam='continue.param', t=None, t_extra=None, oldsub='subber.sh', \
 newsub='cont_subber.sh'):
     """
     Makes a submission script for continuing a simulation from a previous output.
@@ -213,11 +216,13 @@ newsub='cont_subber.sh'):
         Filename of the .param file for the simulation
     newparam : str
         filename for the .param file for the continued simulation
-    nSteps : int
-        Total number of steps to simulate
-    nSteps_extra : int
-        Instead of total number of steps this sets how many more to complete
-        OVERIDES nSteps!!!
+    t : float or SimArray
+        Total simulation time to run.
+        If no units are specified, it is in simulation units
+    t_extra : float or SimArray
+        Extra simulation time to run
+        If no units are specified, it is in simulation units
+        OVERIDES t!!!
     oldsub : str
         Filename for the original submission script
     newsub : str
@@ -254,15 +259,30 @@ newsub='cont_subber.sh'):
     iStartStep = int(flist[-1][-6:])
     param['iStartStep'] = iStartStep
     param['achInFile'] = flist[-1]    
+    dDelta = param['dDelta']
     
     # Set the number of steps to run        
-    if nSteps_extra is not None:
+    if t_extra is not None:
         
-        param['nSteps'] = iStartStep + nSteps_extra
+        # Convert to simulation units if needed
+        if pynbody.units.has_units(t_extra):
+            
+            t_unit = isaac.units_from_param(param)['t_unit']
+            t_extra.convert_units(t_unit)
         
-    elif nSteps is not None:
+        # Assign output
+        param['nSteps'] = iStartStep + int(round(t_extra/dDelta))
         
-        param['nSteps'] = nSteps
+    elif t is not None:
+        
+        # Convert to simulation units if needed
+        if pynbody.units.has_units(t):
+            
+            t_unit = isaac.units_from_param(param)['t_unit']
+            t.convert_units(t_unit)
+            
+        # Assign output
+        param['nSteps'] = int(round(t/dDelta))
     
     # Save new param file
     isaac.configsave(param, newparam, ftype='param')
