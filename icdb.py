@@ -48,11 +48,15 @@ class database():
     """
     IC database class.  Initialize with:
     
-    db = icdb.database(filefilter, dir1, dir2, ...)
+        db = icdb.database(filefilter, dir1, dir2, ...)
     
     filefilter is a string used to filter IC settings files, ie '*_settings.p'
     dir1, dir2 are base directories which are recursively searched to find
     settings files
+    
+    To use all and only the supplied directories, set exact_dirs=True:
+    
+        db = icdb.database(filefilter, dir1, dir2, ..., exact_dirs=True)
     """
     
     def __init__(self, filefilter='IC_settings.p', *directories, **kwargs):
@@ -66,16 +70,42 @@ class database():
         self.filefilter = filefilter
         self._kwargs = kwargs
         
+        # keyword args defaults
+        exact_dirs = False
+        recursive = True
+        
+        # Parse keyword args
+        for key, val in kwargs.iteritems():
+            
+            if key is 'exact_dirs':
+                # Exact dirs is the flag that basically says don't search
+                # recursively
+                exact_dirs = val
+                recursive = not exact_dirs
+                
+            else:
+                
+                raise KeyError, 'Unrecognized argument {0}'.format(key)
+        
         matches = []
         
         for directory in directories:
             
             print 'Building for ', directory            
-            new_matches = self._scan_dir(directory, filefilter)
+            new_matches = self._scan_dir(directory, filefilter, recursive=recursive)
             print '    Found {} files'.format(len(new_matches))
             matches += new_matches
-
-        filelist = list(set(matches))
+            
+            
+        if not exact_dirs:
+            # Remove duplicate files.  changes order, but required if directories
+            # are recursively searched
+            filelist = list(set(matches))
+            
+        else:
+            
+            filelist = matches
+        
         datalist = []
         
         for i, fname in enumerate(filelist):
@@ -106,17 +136,32 @@ class database():
         
         return len(self.data)
     
-    def _scan_dir(self, basedir='.', filefilter='*', kind='IC'):
+    def _scan_dir(self, basedir='.', filefilter='*', kind='IC', recursive=True):
+        """
+        Recursively scan the directory basedir for files matching filefilter.
+        If recursive=False, only basedir is searched
+        """
         
         if kind is 'IC':
             
             matches = []
             
-            for root, dirnames, filenames in os.walk(basedir):
-                for filename in fnmatch.filter(filenames, filefilter):
-                    fname = os.path.join(root, filename)
-                    fname = os.path.realpath(fname)
+            if recursive:
+            # Recursive search for files matching filefilter
+                for root, dirnames, filenames in os.walk(basedir):
+                    for filename in fnmatch.filter(filenames, filefilter):
+                        fname = os.path.join(root, filename)
+                        fname = os.path.realpath(fname)
+                        matches.append(fname)
                     
+            else:
+            # Only search the basedir
+                filenames = os.listdir(basedir)
+                
+                for filename in fnmatch.filter(filenames, filefilter):
+                    
+                    fname = os.path.join(basedir, filename)
+                    fname = os.path.realpath(fname)
                     matches.append(fname)
                     
             return matches
