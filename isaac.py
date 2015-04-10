@@ -426,8 +426,58 @@ def Q2(snapshot, molecular_mass = 2.0, bins=100, max_height=None):
     
     return r_edges, Q_binned
     
+def kappa(f, bins=100):
+    """
+    Estimate the epicyclic frequency from velocity
+    
+    **ARGUMENTS**
+    
+    f : TipsySnap
+        Simulation snapshot
+    bins : int or array-like
+        Either the number of bins to use or the bin edges
+        
+    **RETURNS**
+    
+    kappa : SimArray
+        epicyclic frequency
+    r_edges : SimArray
+        binedges used
+    """
+    
+    r = f.g['rxy']
+    v = f.g['vt']
+    slope_units = v.units/r.units
+    
+    r_edges, v_mean, dummy = binned_mean(r, v, bins=bins, ret_bin_edges=True)
+    r_cent = (r_edges[1:] + r_edges[0:-1])/2
+    nbins = len(r_cent)
+    ind = np.digitize(r, r_edges) - 1
+    ind[ind < 0] = 0
+    ind[ind > nbins-1] = nbins-1
+    
+    dv_dr = SimArray(np.zeros(nbins), slope_units)
+    
+    for i in range(nbins):
+        
+        mask = (ind == i)
+        r_short = r[mask]
+        
+        if len(r_short) > 0:
+            
+            p = np.polyfit(r[mask], v[mask], 1)
+            dv_dr[i] = p[0]
+            
+        else:
+            
+            dv_dr[i] = np.nan
+        
+    kappa = np.sqrt(2*v_mean*(v_mean + r_cent*dv_dr))/r_cent
+        
+    return kappa, r_edges
+    
 def Q(snapshot, molecular_mass = 2.0, bins=100, max_height=None, \
-use_velocity=False):
+use_velocity=False, use_omega=True):
     """
     Calculates the Toomre Q as a function of r, assuming radial temperature
     profile and kappa ~= omega
@@ -443,6 +493,8 @@ use_velocity=False):
         Determines whether to use the particles' velocities to calculate orbital
         velocity.  Useful if the circular orbital velocities are set in the
         snapshot.
+    use_omega : Bool
+        Default=True.  Use omega as a proxy for kappa to reduce noise
         
     ** RETURNS **
     
@@ -457,25 +509,39 @@ use_velocity=False):
     G = SimArray([1.0],'G')
     # Calculate surface density
     sig, r_edges = sigma(snapshot, bins)
-    # Calculate keplerian angular velocity (as a proxy for the epicyclic
-    # frequency, which is a noisy calculation)
-    if use_velocity:
-        
-        dummy, omega, dummy2 = binned_mean(snapshot.g['rxy'], \
-        snapshot.g['vt']/snapshot.g['rxy'], binedges=r_edges)
-    
-    else:
-        
-        p = pynbody.analysis.profile.Profile(snapshot, bins=r_edges)    
-        omega = p['omega']
-        
     # Calculate sound speed
     m = match_units(molecular_mass,'m_p')[0]
     c_s_all = np.sqrt(kB*snapshot.g['temp']/m)
     # Bin/average sound speed
     dummy, c_s, dummy2 = binned_mean(snapshot.g['rxy'], c_s_all, binedges=r_edges)
     
-    return (omega*c_s/(np.pi*G*sig)).in_units('1'), r_edges
+    if use_omega:
+        # Calculate keplerian angular velocity (as a proxy for the epicyclic
+        # frequency, which is a noisy calculation)
+        if use_velocity:
+            # Calculate directly from particle's velocity
+            dummy, omega, dummy2 = binned_mean(snapshot.g['rxy'], \
+            snapshot.g['vt']/snapshot.g['rxy'], binedges=r_edges)
+        
+        else:
+            # Estimate, from forces, using pynbody
+            p = pynbody.analysis.profile.Profile(snapshot, bins=r_edges)    
+            omega = p['omega']
+        
+        kappa_calc = omega
+        
+    else:
+        
+        if use_velocity:
+            # Calculate directly from particle's velocities
+            kappa_calc, dummy = kappa(snapshot, r_edges)
+            
+        else:
+            # Estimate, from forces, using pynbody
+            p = pynbody.analysis.profile.Profile(snapshot, bins=r_edges)    
+            kappa_calc = p['kappa']
+            
+    return (kappa_calc*c_s/(np.pi*G*sig)).in_units('1'), r_edges
     
 def Q_eff(snapshot, molecular_mass=2.0, bins=100):
     """
