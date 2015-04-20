@@ -443,36 +443,27 @@ def kappa(f, bins=100):
         epicyclic frequency
     r_edges : SimArray
         binedges used
-    """
-    
+    """    
+    # Require regular spacing of bins
+    if not isinstance(bins, int):
+        
+        dr = bins[[1]] - bins[[0]]
+        eps = np.finfo(bins.dtype).eps
+        
+        if not np.all(bins[1:] - bins[0:-1] <= dr + 1000*eps):
+            
+            raise ValueError, 'Bins not uniformly spaced'
+            
     r = f.g['rxy']
     v = f.g['vt']
-    slope_units = v.units/r.units
     
     r_edges, v_mean, dummy = binned_mean(r, v, bins=bins, ret_bin_edges=True)
+    dummy, rv_mean, dummy2 = binned_mean(r, r*v, bins=r_edges)
     r_cent = (r_edges[1:] + r_edges[0:-1])/2
-    nbins = len(r_cent)
-    ind = np.digitize(r, r_edges) - 1
-    ind[ind < 0] = 0
-    ind[ind > nbins-1] = nbins-1
-    
-    dv_dr = SimArray(np.zeros(nbins), slope_units)
-    
-    for i in range(nbins):
+    dr = r_edges[[1]] - r_edges[[0]]
+    drv_dr = np.gradient(rv_mean, dr)
         
-        mask = (ind == i)
-        r_short = r[mask]
-        
-        if len(r_short) > 0:
-            
-            p = np.polyfit(r[mask], v[mask], 1)
-            dv_dr[i] = p[0]
-            
-        else:
-            
-            dv_dr[i] = np.nan
-        
-    kappa = np.sqrt(2*v_mean*(v_mean + r_cent*dv_dr))/r_cent
+    kappa = np.sqrt(2*v_mean*drv_dr)/r_cent
         
     return kappa, r_edges
     
