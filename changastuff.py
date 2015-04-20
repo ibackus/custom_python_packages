@@ -1,21 +1,20 @@
 # -*- coding: utf-8 -*-
 """
 Contains various functions for submitting ChaNGa jobs to hyak.  These are quite
-platform specific and should not be expected to be broadly useful.
+platform specific.
 
 Created on Wed Oct 29 13:30:56 2014
 
 @author: ibackus
 """
-
 import os
 import glob
-import isaac
 import re
-import subprocess
+import pynbody
+
+import isaac
 import ICglobal_settings
 global_settings = ICglobal_settings.global_settings
-import pynbody
 
 def PBS_script(workdir, param='snapshot.param', nodes=1, ppn=12, walltime=48, \
 jobname='PBS_job', backfill=True, email=None):
@@ -120,9 +119,11 @@ fi\n'.format(int(walltime*60), param_full, outfile)
 def subber(directories, scriptname, scriptstr=None):
     """
     Submits scriptname, contained in all the directories, to the submission
-    queue using qsub.
+    queue using qsub.  Optionally, the script can be provided as a string (or
+    a list of strings for each simulation) in the variable scriptstr
     
-    If set, scriptstr will be used as the submission script
+    Note: the submission scripts will be made executable for all users
+    
     
     **ARGUMENTS**
     
@@ -169,20 +170,13 @@ def subber(directories, scriptname, scriptstr=None):
             f = open(scriptname, 'w')
             f.write(scriptstr[i])
             f.close()
-            # Make them executable
-            os.system('chmod a+x ' + scriptname)
+            
+        # Make them executable
+        os.system('chmod a+x ' + scriptname)
             
         # Submit the script to PBS
         print os.getcwd()
         print command
-#        p = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-#        
-#        # Print output
-#        for line in iter(p.stdout.readline, ''):
-#            
-#            print line,
-#            
-#        p.wait()
         
     # Return to current working directory
     os.chdir(cwd)
