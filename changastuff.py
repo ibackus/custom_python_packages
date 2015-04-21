@@ -10,6 +10,7 @@ Created on Wed Oct 29 13:30:56 2014
 import os
 import glob
 import re
+from subprocess import Popen, PIPE
 import pynbody
 
 import isaac
@@ -116,11 +117,15 @@ fi\n'.format(int(walltime*60), param_full, outfile)
     
     return script
 
-def subber(directories, scriptname, scriptstr=None):
+def subber(directories, scriptname, scriptstr=None, subfile=None):
     """
     Submits scriptname, contained in all the directories, to the submission
     queue using qsub.  Optionally, the script can be provided as a string (or
     a list of strings for each simulation) in the variable scriptstr
+    
+    Optionally a bash script can be saved to subfile instead of submitting
+    the scripts.  This can be useful for batch submission when using a
+    computation node.
     
     Note: the submission scripts will be made executable for all users
     
@@ -135,6 +140,9 @@ def subber(directories, scriptname, scriptstr=None):
         Default = None (do nothing!)
         Either a string containing the PBS submission script (see PBS_script)
         or a list of such strings.  These will be saved to directories/scriptname
+    subfile : str or None
+        (optional) If a string, filename for a bash script to be saved instead 
+        of executing the qsub commands
     """
     
     # Make the directories list iterable
@@ -159,6 +167,11 @@ def subber(directories, scriptname, scriptstr=None):
     # Submission command
     command = 'qsub ' + scriptname
     
+    if subfile is not None:
+        
+        bashscript = open(subfile, 'w')
+        bashscript.write('#/bin/bash\n')
+    
     # Submit all the scripts
     for i, fullpath in enumerate(fullpaths):
         
@@ -174,11 +187,26 @@ def subber(directories, scriptname, scriptstr=None):
         # Make them executable
         os.system('chmod a+x ' + scriptname)
             
-        # Submit the script to PBS
-        print os.getcwd()
-        print command
+        if subfile is not None:
+            
+            bashscript.write(command + '\n')
+            
+        else:
+            
+            # Submit the script to PBS
+            p = Popen(command.split(), stderr=PIPE, stdout=PIPE)
+            for line in iter(p.stdout.readline, ''):
+                
+                print line,
+    
+            p.wait()
         
-    # Return to current working directory
+    # Finalize
+    if subfile is not None:
+        
+        bashscript.close()
+        os.system('chmod a+x ' + subfile)
+        
     os.chdir(cwd)
 
 def make_continue_sub(simdir='.', paramname='snapshot.param', \
