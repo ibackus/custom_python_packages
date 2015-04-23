@@ -37,10 +37,11 @@ def snapshot_defaults(snapshot):
     snapshot['vel'].convert_units('km s**-1')
     snapshot['eps'].convert_units('au')
     snapshot.g['temp'].convert_units('K')
-    snapshot.g['rho'].convert_units('Msol au**-3')
     
     # Calculate smoothing lengths
     if ('rho' in snapshot.g.loadable_keys()) or ('rho' in snapshot.g.keys()):
+        
+        snapshot.g['rho'].convert_units('Msol au**-3')
         
         if ~(np.any(snapshot.g['rho'] == 0)):
             
