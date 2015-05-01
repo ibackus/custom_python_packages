@@ -18,7 +18,7 @@ import ICglobal_settings
 global_settings = ICglobal_settings.global_settings
 
 def PBS_script(workdir, param='snapshot.param', nodes=1, ppn=12, walltime=48, \
-jobname='PBS_job', backfill=True, email=None):
+jobname='PBS_job', backfill=True, email=None, **kwargs):
     """
     A not very robust function to generate PBS submission scripts for ChaNGa
     jobs on hyak.  Some of the requirements include:
@@ -53,6 +53,10 @@ jobname='PBS_job', backfill=True, email=None):
         Boolean flag for whether to use the backfill (default is TRUE)
     email : str
         Email address for PBS to send updates to
+        
+    **kwargs
+    flag pairs.  CAREFUL: these must not conflict with other flags.  Flag,val
+    pairs (ie -flag val) are passed as: flag=val
         
     **RETURN**
     
@@ -97,6 +101,13 @@ jobname='PBS_job', backfill=True, email=None):
         
         script += '#PBS -q bf\n'
         
+    # Parse kwargs
+    if kwargs is not None:
+        
+        for key, val in kwargs.iteritems():
+            
+            script += '#PBS -{0} {1}\n'.format(key, val)
+            
     # Runtime initialization
     script += 'module load gcc_4.4.7-ompi_1.6.5\n\
 export MX_RCACHE=0\n\
