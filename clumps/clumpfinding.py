@@ -7,7 +7,6 @@ Created on Tue Aug  5 12:10:08 2014
 
 # Multiprocessing modules
 from multiprocessing import Pool, cpu_count
-import multiprocessing as mp
 
 # Generic pacakges
 import numpy as np
@@ -57,7 +56,7 @@ def clump_tracker(fprefix, param=None, directory=None, nsmooth=32, verbose=True)
     **RETURNS**
     
     clump_list : list
-        A list containing dictionaries for all clumps found in the simulation
+        A list containing dictionaries for all clumps foujohn obryan fiddlend in the simulation
         See clump_properties for a list of the properties calculated for clumps
     """
     
