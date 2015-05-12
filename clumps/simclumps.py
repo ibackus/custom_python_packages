@@ -524,14 +524,15 @@ def exists(sim):
     
 def len2(x):
     """
-    A modified version of len() to work with numbers.
+    A modified version of len() to work with numbers.  Numbers have a length
+    of 1
     """
     
-    if np.ndim(x) > 0:
+    if hasattr(x, '__len__'):
         
-        length = np.shape(x)[0]
+        length = len(x)
         
-    else:
+    elif isinstance(x, (int,float,long,complex)):
         
         length = 1
         
@@ -651,7 +652,7 @@ def _getnt(simulation, t=None):
     if t is not None:
         
         dummy = np.zeros(nt_sim)
-        nt = len(dummy[t])
+        nt = len2(dummy[t])
             
     else:
         
