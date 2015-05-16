@@ -5,6 +5,7 @@
  """
 import pynbody
 SimArray = pynbody.array.SimArray
+pb = pynbody
 
 import copy
 import matplotlib
