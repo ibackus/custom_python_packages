@@ -17,6 +17,7 @@ import glob
 import os
 import datetime
 import fnmatch
+import logging
 
 self_dir = os.path.dirname(os.path.realpath(__file__))
 print os.path.realpath(__file__)
