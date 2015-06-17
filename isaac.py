@@ -427,8 +427,8 @@ def kappa(f, bins=100):
         
     return kappa, r_edges
     
-def Q(snapshot, molecular_mass = 2.0, bins=100, max_height=None, \
-use_velocity=False, use_omega=True):
+def Q(snapshot, molecular_mass = 2.0, bins=100, use_velocity=False, \
+use_omega=True):
     """
     Calculates the Toomre Q as a function of r, assuming radial temperature
     profile and kappa ~= omega
@@ -492,7 +492,47 @@ use_velocity=False, use_omega=True):
             p = pynbody.analysis.profile.Profile(snapshot, bins=r_edges)    
             kappa_calc = p['kappa']
             
-    return (kappa_calc*c_s/(np.pi*G*sig)).in_units('1'), r_edges        
+    return (kappa_calc*c_s/(np.pi*G*sig)).in_units('1'), r_edges
+
+def Qeff(snapshot, molecular_mass = 2.0, bins=100, use_velocity=False, \
+use_omega=True, alpha=0.18, beta=2.2):
+    """
+    Estimates the effective Toomre Q as a function of r, defined as:
+        Qeff = beta * Q * (h/R)^alpha
+    See isaac.Q and isaac.height for the estimates of Q and h
+    
+    ** ARGUMENTS **
+    
+    snapshot : tipsy snapshot
+    molecular_mass : float
+        Mean molecular mass (for sound speed).  Default = 2.0
+    bins : int or array
+        Either the number of bins or the bin edges
+    use_velocity : Bool
+        Determines whether to use the particles' velocities to calculate orbital
+        velocity.  Useful if the circular orbital velocities are set in the
+        snapshot.
+    use_omega : Bool
+        Default=True.  Use omega as a proxy for kappa to reduce noise
+    alpha : float
+        Powerlaw for height dependence
+    beta : float
+        Normalization such that disks fragment for Qeff = 1
+        
+    ** RETURNS **
+    
+    Qeff : array
+        Effective Toomre Q as a function of r
+    r_edges : array
+        Radial bin edges
+    """
+    Qcalc, r_edges = Q(snapshot, molecular_mass, bins, use_velocity, use_omega)
+    dummy, h = height(snapshot, r_edges, center_on_star=False)
+    r = (r_edges[1:] + r_edges[0:-1])/2.
+    Qeff = beta * ((h/r).in_units('1'))**alpha
+    
+    return Qeff, r_edges
+    
     
 def strip_units(x):
     """
