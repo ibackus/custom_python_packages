@@ -22,6 +22,18 @@ import logging
 self_dir = os.path.dirname(os.path.realpath(__file__))
 print os.path.realpath(__file__)
 
+def centerdisk(snapshot):
+    """
+    Centers a disk on the center of mass puts it into rest frame
+    """
+    cm = pynbody.analysis.halo.center_of_mass(snapshot)
+    vel = pynbody.analysis.halo.center_of_mass_velocity(snapshot)
+    
+    snapshot['pos'] -= cm
+    snapshot['vel'] -= vel
+    
+    return
+    
 def snapshot_defaults(snapshot):
     """
     Applies various defaults to tipsy snapshots of protoplanetary disk
@@ -29,6 +41,8 @@ def snapshot_defaults(snapshot):
     
         -Sets nice units
         -Calculates particle smoothing lengths using mass and rho (if available)
+        -Centers on snapshot center-of-mass
+        -Puts in rest frame
     
     Changes the snapshot in place
     """
@@ -48,6 +62,9 @@ def snapshot_defaults(snapshot):
         if ~(np.any(snapshot.g['rho'] == 0)):
             
             snapshot.g['smooth'] = (snapshot.g['mass']/snapshot.g['rho'])**(1,3)
+    
+    # Center the disk
+    centerdisk(snapshot)
     
     return
 
