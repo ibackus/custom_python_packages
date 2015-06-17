@@ -386,49 +386,6 @@ def sigma(snapshot, bins=100):
     return sig, r_bins
     
     
-def Q2(snapshot, molecular_mass = 2.0, bins=100, max_height=None):
-    
-    # Physical constants
-    kB = SimArray([1.0],'k')
-    G = SimArray([1.0],'G')
-    # Load stuff froms snapshot
-    v = snapshot.g['vt']
-    r = snapshot.g['rxy']
-    z = snapshot.g['z']
-    T = snapshot.g['temp']
-    # Calculate sound speed for all particles
-    m = match_units(molecular_mass,'m_p')[0]
-    cs = np.sqrt(kB*T/m)
-    # Calculate surface density
-    sig_binned, r_edges = sigma(snapshot, bins)
-    r_cent = (r_edges[1:]+r_edges[0:-1])/2
-    sig_spl = extrap1d(r_cent, sig_binned)
-    sig = SimArray(sig_spl(r), sig_binned.units)
-    # Calculate omega (as a proxy for kappa)
-    omega = v/r
-    kappa = omega
-    
-    #Calculate Q for all particles
-    print 'kappa',kappa.units
-    print 'cs',cs.units
-    print 'sigma', sig.units
-    Q_all = (kappa*cs/(np.pi*G*sig)).in_units('1')
-    
-    # Use particles close to midplane
-    if max_height is not None:
-        
-        dummy, h = height(snapshot, bins=r_edges)
-        ind = np.digitize(r, r_edges) - 1
-        ind[ind<0] = 0
-        ind[ind >= (len(r_edges)-1)] = len(r_edges)-2
-        mask = abs(z) < (max_height*h[ind])
-        Q_all = Q_all[mask]
-        r = r[mask]
-        
-    dummy, Q_binned, dummy2 = binned_mean(r, Q_all, binedges=r_edges)
-    
-    return r_edges, Q_binned
-    
 def kappa(f, bins=100):
     """
     Estimate the epicyclic frequency from velocity
