@@ -492,56 +492,7 @@ use_velocity=False, use_omega=True):
             p = pynbody.analysis.profile.Profile(snapshot, bins=r_edges)    
             kappa_calc = p['kappa']
             
-    return (kappa_calc*c_s/(np.pi*G*sig)).in_units('1'), r_edges
-    
-def Q_eff(snapshot, molecular_mass=2.0, bins=100):
-    """
-    Calculates the effective Toomre Q as a function of r, assuming radial temp
-    profile and kappa ~= omega and scaleheight << wavelength.  This assumption
-    simplifies the calculation of Q_eff (where wavelength is the wavelength of
-    the disturbances of interest)
-    
-    ** ARGUMENTS **
-    
-    snapshot : tipsy snapshot
-    molecular_mass : float
-        Mean molecular mass (for sound speed).  Default = 2.0
-    bins : int or array
-        Either the number of bins or the bin edges
-        
-    ** RETURNS **
-    
-    Qeff : array
-        Effective Toomre Q as a function of r for scale height << wavelength
-    r_edges : array
-        Radial bin edges
-    """
-    # Physical constants
-    kB = SimArray([1.0],'k')
-    G = SimArray([1.0],'G')
-    # Calculate surface density
-    sig, r_edges = sigma(snapshot, bins)
-    # Calculate keplerian angular velocity (as a proxy for the epicyclic
-    # frequency, which is a noisy calculation)
-    p = pynbody.analysis.profile.Profile(snapshot, bins=r_edges)    
-    omega = p['omega']
-    # Calculate sound speed
-    m = match_units(molecular_mass,'m_p')[0]
-    c_s_all = np.sqrt(kB*snapshot.g['temp']/m)
-    # Bin/average sound speed
-    dummy, c_s, dummy2 = binned_mean(snapshot.g['rxy'], c_s_all, binedges=r_edges)    
-    # Calculate scale height
-    dummy, h = height(snapshot, bins=r_edges, center_on_star=False)
-    
-    a = np.pi*G*sig
-    b = (2*a*h/c_s**2).in_units('1')
-    Q0 = (omega*c_s/a).in_units('1')
-    
-    return Q0 * np.sqrt(1 + b), r_edges
-    
-    return ((omega*c_s/a) * np.sqrt(1 + 2*a*h/c_s**2)).in_units('1'), r_edges
-    
-    
+    return (kappa_calc*c_s/(np.pi*G*sig)).in_units('1'), r_edges        
     
 def strip_units(x):
     """
