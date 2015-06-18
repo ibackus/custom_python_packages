@@ -8,7 +8,7 @@ SimArray = pynbody.array.SimArray
 pb = pynbody
 
 import copy
-import matplotlib
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.interpolate as interp
@@ -21,6 +21,53 @@ import logging
 
 self_dir = os.path.dirname(os.path.realpath(__file__))
 print os.path.realpath(__file__)
+
+def gridplot(nrows, ncols=1):
+    """
+    Creates a grid of tightly-packed subplots and returns them as a numpy array,
+    shape (nrows,ncols).  If nrows=ncols=1, a single subplot is made.
+    Currently not fully implemented for a 2D array
+    """
+    # Just make a single subplot
+    if (nrows == 1) & (ncols == 1):
+        
+        return plt.subplot(1,1,1)
+    
+    # Create a grid
+    grid = mpl.gridspec.GridSpec(nrows,ncols)
+    grid.update(wspace=0., hspace=0.)
+    
+    # Initialize subplots
+    ax = np.zeros((nrows,ncols), dtype=object)
+    counter = 0
+    for i in range(nrows):
+        for j in range(ncols):
+            if i > 0:
+                sharex = ax[0,j]
+            else:
+                sharex = None
+            if j > 0:
+                sharey = ax[i,0]
+            else:
+                sharey = None
+                
+            ax[i,j] = plt.subplot(grid[counter], sharex = sharex, sharey = sharey)
+            counter += 1
+    
+    # Remove ticklabels inbetween plots
+    for i in range(nrows-1):
+        for j in range(ncols):
+            plt.setp(ax[i,j].get_xticklabels(), visible=False)
+    for i in range(nrows):
+        for j in range(1,ncols):
+            plt.setp(ax[i,j].get_yticklabels(), visible=False)
+            
+    # If this is a 1-D grid, flatten ax    
+    if (ncols == 1) or (nrows == 1):
+        
+        ax = ax.flatten()
+    
+    return ax
 
 def centerdisk(snapshot):
     """
@@ -1216,7 +1263,7 @@ def heatmap(x, y, z, bins=10, plot=True, output=False):
     
     if plot:
         
-        cmap = copy.copy(matplotlib.cm.jet)
+        cmap = copy.copy(mpl.cm.jet)
         cmap.set_bad('w',1.)
         masked_z = np.ma.array(z_binned, mask=np.isnan(z_binned))
         plt.pcolormesh(x_mesh, y_mesh, masked_z, cmap = cmap)
