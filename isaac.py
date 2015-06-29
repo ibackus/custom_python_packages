@@ -22,6 +22,42 @@ import logging
 self_dir = os.path.dirname(os.path.realpath(__file__))
 print os.path.realpath(__file__)
 
+def diskbins(f, bins=100, fint=0.95):
+    """
+    A utility that sets up disk bins to include a fraction fint of the particles
+    If bins is the r_edges, then bins is returned
+    
+    **ARGUMENTS**
+    
+    f : simulation snapshot
+    bins : int or array
+        either number of bins or the bin edges to use.  If NOT int, assumed
+        to be bin edges, in which case bins is returned
+    fint : float (from 0 to 1)
+        Fraction of particles to include at the max radius
+        
+    **RETURNS**
+    
+    r_edges : array
+        bin edges to use
+    """
+    
+    if not isinstance(bins, int):
+        
+        return bins
+        
+    if (fint > 1) or (fint < 0):
+        
+        raise ValueError, 'fint must be between 0 and 1'
+        
+    r = f.g['rxy']
+    rSort = np.sort(r)
+    iMax = int(round(len(rSort) * fint)) - 1
+    rMax = rSort[[iMax]]
+    r_edges = np.linspace(0, rMax, bins+1)
+    
+    return r_edges
+
 def gridplot(nrows, ncols=1):
     """
     Creates a grid of tightly-packed subplots and returns them as a numpy array,
