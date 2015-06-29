@@ -455,7 +455,7 @@ def kappa(f, bins=100):
         
         if not np.all(bins[1:] - bins[0:-1] <= dr + 1000*eps):
             
-            raise ValueError, 'Bins not uniformly spaced'
+            warnings.warn('Bins not uniformly spaced')
             
     r = f.g['rxy']
     v = f.g['vt']
