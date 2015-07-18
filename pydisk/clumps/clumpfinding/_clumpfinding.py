@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 
 # 'Internal' packages
 from pydisk import utils
-from . import loadhalos
+from .. import loadhalos
 
 from pydisk.pychanga import get_fnames
 
