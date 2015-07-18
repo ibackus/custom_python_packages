@@ -1,6 +1,14 @@
 pydisk.clumps package
 =====================
 
+Subpackages
+-----------
+
+.. toctree::
+
+    pydisk.clumps.clumpfinding
+    pydisk.clumps.simclumps
+
 Submodules
 ----------
 
@@ -8,14 +16,6 @@ pydisk.clumps.clumpfinding module
 ---------------------------------
 
 .. automodule:: pydisk.clumps.clumpfinding
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pydisk.clumps.simclumps module
-------------------------------
-
-.. automodule:: pydisk.clumps.simclumps
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,0 +1,10 @@
+pydisk.clumps.simclumps package
+===============================
+
+Module contents
+---------------
+
+.. automodule:: pydisk.clumps.simclumps
+    :members:
+    :undoc-members:
+    :show-inheritance:
