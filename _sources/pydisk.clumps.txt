@@ -1,0 +1,30 @@
+pydisk.clumps package
+=====================
+
+Submodules
+----------
+
+pydisk.clumps.clumpfinding module
+---------------------------------
+
+.. automodule:: pydisk.clumps.clumpfinding
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pydisk.clumps.simclumps module
+------------------------------
+
+.. automodule:: pydisk.clumps.simclumps
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pydisk.clumps
+    :members:
+    :undoc-members:
+    :show-inheritance:

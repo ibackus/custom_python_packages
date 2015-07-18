@@ -1,0 +1,10 @@
+pydisk.ICgen_ package
+=====================
+
+Module contents
+---------------
+
+.. automodule:: pydisk.ICgen_
+    :members:
+    :undoc-members:
+    :show-inheritance:

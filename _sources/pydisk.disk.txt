@@ -1,0 +1,10 @@
+pydisk.disk package
+===================
+
+Module contents
+---------------
+
+.. automodule:: pydisk.disk
+    :members:
+    :undoc-members:
+    :show-inheritance:

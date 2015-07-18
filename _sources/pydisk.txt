@@ -1,0 +1,35 @@
+pydisk package
+==============
+
+Subpackages
+-----------
+
+.. toctree::
+
+    pydisk.ICgen_
+    pydisk.clumps
+    pydisk.disk
+    pydisk.pdmath
+    pydisk.plot
+    pydisk.pychanga
+    pydisk.utils
+
+Submodules
+----------
+
+pydisk.docconf module
+---------------------
+
+.. automodule:: pydisk.docconf
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pydisk
+    :members:
+    :undoc-members:
+    :show-inheritance:
