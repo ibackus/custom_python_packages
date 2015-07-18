@@ -1,0 +1,8 @@
+#!/bin/bash
+rm -rf doc
+mkdir doc
+cp docconf.py doc/conf.py
+sphinx-apidoc -d 4 -A "Isaac Backus" -F -o doc ../pydisk
+cd doc
+make html
+cd ../
