@@ -1,4 +1,7 @@
 #!/bin/bash
+# Dependencies:
+# sphinx
+# numpydocs
 rm -rf doc
 mkdir doc
 cp docconf.py doc/conf.py
