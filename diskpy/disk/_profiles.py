@@ -9,8 +9,8 @@ import pynbody as pb
 SimArray = pb.array.SimArray
 import numpy as np
 
-from pydisk.utils import match_units
-from pydisk.pdmath import binned_mean
+from diskpy.utils import match_units
+from diskpy.pdmath import binned_mean
 
 def Q(snapshot, molecular_mass = 2.0, bins=100, use_velocity=False, \
 use_omega=True):

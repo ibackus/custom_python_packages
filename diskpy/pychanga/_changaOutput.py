@@ -13,7 +13,7 @@ SimArray = pynbody.array.SimArray
 import numpy as np
 import datetime
 
-from pydisk.utils import configparser
+from diskpy.utils import configparser
 
 def get_fnames(fprefix, directory=None):
     """

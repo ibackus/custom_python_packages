@@ -11,7 +11,7 @@ import scipy.interpolate as interp
 import pynbody as pb
 SimArray = pb.array.SimArray
 
-from pydisk.utils import strip_units, match_units
+from diskpy.utils import strip_units, match_units
 
 def _loadcoeffs(fname):
     """

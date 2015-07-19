@@ -18,10 +18,10 @@ import os
 import matplotlib.pyplot as plt
 
 # 'Internal' packages
-from pydisk import utils
+from diskpy import utils
 from .. import loadhalos
 
-from pydisk.pychanga import get_fnames
+from diskpy.pychanga import get_fnames
 
 def clump_tracker(fprefix, param=None, directory=None, nsmooth=32, verbose=True):
     """

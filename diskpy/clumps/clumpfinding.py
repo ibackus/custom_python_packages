@@ -20,7 +20,7 @@ import re
 
 # 'Internal' packages
 import isaac
-from pydisk import utils
+from diskpy import utils
 
 def clump_tracker(fprefix, param=None, directory=None, nsmooth=32, verbose=True):
     """

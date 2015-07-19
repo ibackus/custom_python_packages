@@ -11,7 +11,7 @@ import copy
 import pynbody
 SimArray = pynbody.array.SimArray
 
-from pydisk.utils import configparser
+from diskpy.utils import configparser
 
 # Set up default filenames
 _dir = os.path.dirname(os.path.realpath(__file__))

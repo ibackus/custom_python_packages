@@ -11,13 +11,9 @@ import re
 from subprocess import Popen, PIPE
 import pynbody
 
-import pydisk
-global_settings = pydisk.ICgen_.global_settings
-from pydisk.utils import configparser, configsave
+from diskpy.ICgen_ import global_settings
+from diskpy.utils import configparser, configsave, units_from_param
 
-import isaac
-#import ICglobal_settings
-#global_settings = ICglobal_settings.global_settings
 
 def pbs_script(workdir, param='snapshot.param', nodes=1, ppn=12, walltime=48, \
 jobname='PBS_job', backfill=True, email=None, **kwargs):
@@ -302,7 +298,7 @@ newsub='cont_subber.sh'):
         # Convert to simulation units if needed
         if pynbody.units.has_units(t_extra):
             
-            t_unit = isaac.units_from_param(param)['t_unit']
+            t_unit = units_from_param(param)['t_unit']
             t_extra.convert_units(t_unit)
         
         # Assign output
@@ -313,7 +309,7 @@ newsub='cont_subber.sh'):
         # Convert to simulation units if needed
         if pynbody.units.has_units(t):
             
-            t_unit = isaac.units_from_param(param)['t_unit']
+            t_unit = units_from_param(param)['t_unit']
             t.convert_units(t_unit)
             
         # Assign output

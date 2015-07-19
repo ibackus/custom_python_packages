@@ -5,7 +5,7 @@
 rm -rf doc
 mkdir doc
 cp docconf.py doc/conf.py
-sphinx-apidoc -d 4 -A "Isaac Backus" -F -o doc ../pydisk
+sphinx-apidoc -d 4 -A "Isaac Backus" -F -o doc ../diskpy
 cd doc
 make html
 cd ../
