@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pydisk.clumps.simclumps._simclumps &mdash; diskpy  documentation</title>
+    <title>diskpy.clumps.simclumps._simclumps &mdash; diskpy  documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="diskpy  documentation" href="../../../../index.html" />
-    <link rel="up" title="pydisk.clumps.simclumps" href="../simclumps.html" /> 
+    <link rel="up" title="Module code" href="../../../index.html" /> 
   </head>
   <body role="document">
     <div class="related" role="navigation" aria-label="related navigation">
@@ -38,8 +38,7 @@
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="nav-item nav-item-0"><a href="../../../../index.html">diskpy  documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &raquo;</li>
-          <li class="nav-item nav-item-2"><a href="../simclumps.html" accesskey="U">pydisk.clumps.simclumps</a> &raquo;</li> 
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -48,7 +47,7 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <h1>Source code for pydisk.clumps.simclumps._simclumps</h1><div class="highlight"><pre>
+  <h1>Source code for diskpy.clumps.simclumps._simclumps</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Defines all the data classes for storing, managing, organizing, and accessing</span>
@@ -66,7 +65,7 @@
 <span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
 
 
-<div class="viewcode-block" id="newSimgroup"><a class="viewcode-back" href="../../../../pydisk.clumps.simclumps.html#pydisk.clumps.simclumps.newSimgroup">[docs]</a><span class="k">def</span> <span class="nf">newSimgroup</span><span class="p">(</span><span class="n">simlist</span><span class="p">):</span>
+<div class="viewcode-block" id="newSimgroup"><a class="viewcode-back" href="../../../../diskpy.clumps.simclumps.html#diskpy.clumps.simclumps.newSimgroup">[docs]</a><span class="k">def</span> <span class="nf">newSimgroup</span><span class="p">(</span><span class="n">simlist</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates a new simgroup object from a list of clumplists.</span>
 <span class="sd">    &quot;&quot;&quot;</span>    
@@ -80,7 +79,7 @@
         
     <span class="k">return</span> <span class="n">simgrp</span>
 </div>
-<div class="viewcode-block" id="newSim"><a class="viewcode-back" href="../../../../pydisk.clumps.simclumps.html#pydisk.clumps.simclumps.newSim">[docs]</a><span class="k">def</span> <span class="nf">newSim</span><span class="p">(</span><span class="n">clumplist</span><span class="p">):</span>
+<div class="viewcode-block" id="newSim"><a class="viewcode-back" href="../../../../diskpy.clumps.simclumps.html#diskpy.clumps.simclumps.newSim">[docs]</a><span class="k">def</span> <span class="nf">newSim</span><span class="p">(</span><span class="n">clumplist</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates a sim object from a list of clump dictionaries for an entire</span>
 <span class="sd">    simulation.</span>
@@ -98,7 +97,7 @@
     
     <span class="k">return</span> <span class="n">s</span>
 </div>
-<div class="viewcode-block" id="newClump"><a class="viewcode-back" href="../../../../pydisk.clumps.simclumps.html#pydisk.clumps.simclumps.newClump">[docs]</a><span class="k">def</span> <span class="nf">newClump</span><span class="p">(</span><span class="n">clumpDict</span><span class="p">):</span>
+<div class="viewcode-block" id="newClump"><a class="viewcode-back" href="../../../../diskpy.clumps.simclumps.html#diskpy.clumps.simclumps.newClump">[docs]</a><span class="k">def</span> <span class="nf">newClump</span><span class="p">(</span><span class="n">clumpDict</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates a new clump object from a clump dictionary (see clumps.blank_clump</span>
 <span class="sd">    and clumps.build_clumps).</span>
@@ -158,7 +157,7 @@
     
     <span class="k">return</span> <span class="n">cl</span>
     </div>
-<div class="viewcode-block" id="clump"><a class="viewcode-back" href="../../../../pydisk.clumps.simclumps.html#pydisk.clumps.simclumps.clump">[docs]</a><span class="k">def</span> <span class="nf">clump</span><span class="p">(</span><span class="n">nt</span><span class="p">):</span>
+<div class="viewcode-block" id="clump"><a class="viewcode-back" href="../../../../diskpy.clumps.simclumps.html#diskpy.clumps.simclumps.clump">[docs]</a><span class="k">def</span> <span class="nf">clump</span><span class="p">(</span><span class="n">nt</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates a clump object, which is basically just a pynbody SimSnap where</span>
 <span class="sd">    time steps are represented by particles.</span>
@@ -177,7 +176,7 @@
     
     <span class="k">return</span> <span class="n">cl</span>
     </div>
-<div class="viewcode-block" id="sim"><a class="viewcode-back" href="../../../../pydisk.clumps.simclumps.html#pydisk.clumps.simclumps.sim">[docs]</a><span class="k">class</span> <span class="nc">sim</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<div class="viewcode-block" id="sim"><a class="viewcode-back" href="../../../../diskpy.clumps.simclumps.html#diskpy.clumps.simclumps.sim">[docs]</a><span class="k">class</span> <span class="nc">sim</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The sim class.  sims are basically just numpy arrays containing clump</span>
 <span class="sd">    objects.  It stores data for all the clumps in a given simulation (for all</span>
@@ -379,20 +378,20 @@
         
         <span class="k">return</span> <span class="n">outarray</span>
         
-<div class="viewcode-block" id="sim.keys"><a class="viewcode-back" href="../../../../pydisk.clumps.simclumps.html#pydisk.clumps.simclumps.sim.keys">[docs]</a>    <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="sim.keys"><a class="viewcode-back" href="../../../../diskpy.clumps.simclumps.html#diskpy.clumps.simclumps.sim.keys">[docs]</a>    <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return keys present in all clumps</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
     </div>
-<div class="viewcode-block" id="sim.nClumps"><a class="viewcode-back" href="../../../../pydisk.clumps.simclumps.html#pydisk.clumps.simclumps.sim.nClumps">[docs]</a>    <span class="k">def</span> <span class="nf">nClumps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="sim.nClumps"><a class="viewcode-back" href="../../../../diskpy.clumps.simclumps.html#diskpy.clumps.simclumps.sim.nClumps">[docs]</a>    <span class="k">def</span> <span class="nf">nClumps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the number of clumps in the simulation</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         </div>
-<div class="viewcode-block" id="sim.nt"><a class="viewcode-back" href="../../../../pydisk.clumps.simclumps.html#pydisk.clumps.simclumps.sim.nt">[docs]</a>    <span class="k">def</span> <span class="nf">nt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="sim.nt"><a class="viewcode-back" href="../../../../diskpy.clumps.simclumps.html#diskpy.clumps.simclumps.sim.nt">[docs]</a>    <span class="k">def</span> <span class="nf">nt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the number of timesteps in the simulation</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -406,7 +405,7 @@
         
 
         </div></div>
-<div class="viewcode-block" id="simgroup"><a class="viewcode-back" href="../../../../pydisk.clumps.simclumps.html#pydisk.clumps.simclumps.simgroup">[docs]</a><span class="k">class</span> <span class="nc">simgroup</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<div class="viewcode-block" id="simgroup"><a class="viewcode-back" href="../../../../diskpy.clumps.simclumps.html#diskpy.clumps.simclumps.simgroup">[docs]</a><span class="k">class</span> <span class="nc">simgroup</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The simgroup class.  Basically just an array containing a bunch of sim</span>
 <span class="sd">    objects.  Meant to contain information for clumps in a suite of simulations</span>
@@ -523,19 +522,19 @@
         
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__repr__</span><span class="p">()</span>
         
-<div class="viewcode-block" id="simgroup.keys"><a class="viewcode-back" href="../../../../pydisk.clumps.simclumps.html#pydisk.clumps.simclumps.simgroup.keys">[docs]</a>    <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="simgroup.keys"><a class="viewcode-back" href="../../../../diskpy.clumps.simclumps.html#diskpy.clumps.simclumps.simgroup.keys">[docs]</a>    <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return keys present in all clumps</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         </div>
-<div class="viewcode-block" id="simgroup.nsim"><a class="viewcode-back" href="../../../../pydisk.clumps.simclumps.html#pydisk.clumps.simclumps.simgroup.nsim">[docs]</a>    <span class="k">def</span> <span class="nf">nsim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="simgroup.nsim"><a class="viewcode-back" href="../../../../diskpy.clumps.simclumps.html#diskpy.clumps.simclumps.simgroup.nsim">[docs]</a>    <span class="k">def</span> <span class="nf">nsim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the number of simulations present here</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         </div>
-<div class="viewcode-block" id="simgroup.nClumps"><a class="viewcode-back" href="../../../../pydisk.clumps.simclumps.html#pydisk.clumps.simclumps.simgroup.nClumps">[docs]</a>    <span class="k">def</span> <span class="nf">nClumps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="simgroup.nClumps"><a class="viewcode-back" href="../../../../diskpy.clumps.simclumps.html#diskpy.clumps.simclumps.simgroup.nClumps">[docs]</a>    <span class="k">def</span> <span class="nf">nClumps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         
         <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">simulation</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
@@ -566,14 +565,14 @@
     <span class="k">return</span> <span class="n">k</span>
     
 <span class="nd">@pb.derived_array</span>
-<div class="viewcode-block" id="exists"><a class="viewcode-back" href="../../../../pydisk.clumps.simclumps.html#pydisk.clumps.simclumps.exists">[docs]</a><span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="n">sim</span><span class="p">):</span>
+<div class="viewcode-block" id="exists"><a class="viewcode-back" href="../../../../diskpy.clumps.simclumps.html#diskpy.clumps.simclumps.exists">[docs]</a><span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="n">sim</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Defines a pynbody derived array which determines the time steps a clump </span>
 <span class="sd">    exists at</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">sim</span><span class="p">[</span><span class="s">&#39;N&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
     </div>
-<div class="viewcode-block" id="len2"><a class="viewcode-back" href="../../../../pydisk.clumps.simclumps.html#pydisk.clumps.simclumps.len2">[docs]</a><span class="k">def</span> <span class="nf">len2</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<div class="viewcode-block" id="len2"><a class="viewcode-back" href="../../../../diskpy.clumps.simclumps.html#diskpy.clumps.simclumps.len2">[docs]</a><span class="k">def</span> <span class="nf">len2</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A modified version of len() to work with numbers.  Numbers have a length</span>
 <span class="sd">    of 1</span>
@@ -589,7 +588,7 @@
         
     <span class="k">return</span> <span class="n">length</span>
     </div>
-<div class="viewcode-block" id="arraylistcat"><a class="viewcode-back" href="../../../../pydisk.clumps.simclumps.html#pydisk.clumps.simclumps.arraylistcat">[docs]</a><span class="k">def</span> <span class="nf">arraylistcat</span><span class="p">(</span><span class="n">arraylist</span><span class="p">):</span>
+<div class="viewcode-block" id="arraylistcat"><a class="viewcode-back" href="../../../../diskpy.clumps.simclumps.html#diskpy.clumps.simclumps.arraylistcat">[docs]</a><span class="k">def</span> <span class="nf">arraylistcat</span><span class="p">(</span><span class="n">arraylist</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Concatenate a list of like arrays (or SimArrays) into a single array.</span>
 <span class="sd">    Concatenates along the first dimension</span>
@@ -744,8 +743,7 @@
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="nav-item nav-item-0"><a href="../../../../index.html">diskpy  documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &raquo;</li>
-          <li class="nav-item nav-item-2"><a href="../simclumps.html" >pydisk.clumps.simclumps</a> &raquo;</li> 
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

@@ -6,39 +6,39 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pydisk.clumps._clumpfinding &mdash; diskpy  documentation</title>
+    <title>diskpy.clumps.clumpfinding._clumpfinding &mdash; diskpy  documentation</title>
     
-    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
-    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../../',
+        URL_ROOT:    '../../../../',
         VERSION:     '',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="../../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="diskpy  documentation" href="../../../index.html" />
-    <link rel="up" title="Module code" href="../../index.html" /> 
+    <link rel="top" title="diskpy  documentation" href="../../../../index.html" />
+    <link rel="up" title="Module code" href="../../../index.html" /> 
   </head>
   <body role="document">
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="../../../genindex.html" title="General Index"
+          <a href="../../../../genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="../../../py-modindex.html" title="Python Module Index"
+          <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">diskpy  documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">diskpy  documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -47,7 +47,7 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <h1>Source code for pydisk.clumps._clumpfinding</h1><div class="highlight"><pre>
+  <h1>Source code for diskpy.clumps.clumpfinding._clumpfinding</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Created on Tue Aug  5 12:10:08 2014</span>
@@ -68,12 +68,12 @@
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
 
 <span class="c"># &#39;Internal&#39; packages</span>
-<span class="kn">from</span> <span class="nn">pydisk</span> <span class="kn">import</span> <span class="n">utils</span>
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">loadhalos</span>
+<span class="kn">from</span> <span class="nn">diskpy</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">loadhalos</span>
 
-<span class="kn">from</span> <span class="nn">pydisk.pychanga</span> <span class="kn">import</span> <span class="n">get_fnames</span>
+<span class="kn">from</span> <span class="nn">diskpy.pychanga</span> <span class="kn">import</span> <span class="n">get_fnames</span>
 
-<div class="viewcode-block" id="clump_tracker"><a class="viewcode-back" href="../../../pydisk.clumps.html#pydisk.clumps.clump_tracker">[docs]</a><span class="k">def</span> <span class="nf">clump_tracker</span><span class="p">(</span><span class="n">fprefix</span><span class="p">,</span> <span class="n">param</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nsmooth</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+<div class="viewcode-block" id="clump_tracker"><a class="viewcode-back" href="../../../../diskpy.clumps.clumpfinding.html#diskpy.clumps.clumpfinding.clump_tracker">[docs]</a><span class="k">def</span> <span class="nf">clump_tracker</span><span class="p">(</span><span class="n">fprefix</span><span class="p">,</span> <span class="n">param</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nsmooth</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Finds and tracks clumps over a simulation with multiple time steps and</span>
 <span class="sd">    calculates various physical properties of the clumps.</span>
@@ -144,7 +144,7 @@
     
     <span class="k">return</span> <span class="n">clump_list</span>
 </div>
-<div class="viewcode-block" id="blank_clump"><a class="viewcode-back" href="../../../pydisk.clumps.html#pydisk.clumps.blank_clump">[docs]</a><span class="k">def</span> <span class="nf">blank_clump</span><span class="p">(</span><span class="n">clump_pars</span><span class="p">,</span> <span class="n">nt</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<div class="viewcode-block" id="blank_clump"><a class="viewcode-back" href="../../../../diskpy.clumps.clumpfinding.html#diskpy.clumps.clumpfinding.blank_clump">[docs]</a><span class="k">def</span> <span class="nf">blank_clump</span><span class="p">(</span><span class="n">clump_pars</span><span class="p">,</span> <span class="n">nt</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates a blank clump dictionary, using clump_pars</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -180,7 +180,7 @@
     <span class="k">return</span> <span class="n">clump</span>
         
 </div>
-<div class="viewcode-block" id="build_clumps"><a class="viewcode-back" href="../../../pydisk.clumps.html#pydisk.clumps.build_clumps">[docs]</a><span class="k">def</span> <span class="nf">build_clumps</span><span class="p">(</span><span class="n">multilink_list</span><span class="p">,</span> <span class="n">clump_pars_list</span><span class="p">,</span> <span class="n">fnames</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">param</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="build_clumps"><a class="viewcode-back" href="../../../../diskpy.clumps.clumpfinding.html#diskpy.clumps.clumpfinding.build_clumps">[docs]</a><span class="k">def</span> <span class="nf">build_clumps</span><span class="p">(</span><span class="n">multilink_list</span><span class="p">,</span> <span class="n">clump_pars_list</span><span class="p">,</span> <span class="n">fnames</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">param</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Builds a list of clump dictionaries.  The clump dictionaries contain various</span>
 <span class="sd">    properties as a function of time for the different clumps.</span>
@@ -263,7 +263,7 @@
     <span class="k">return</span> <span class="n">clump_list</span>
         
 </div>
-<div class="viewcode-block" id="multilink"><a class="viewcode-back" href="../../../pydisk.clumps.html#pydisk.clumps.multilink">[docs]</a><span class="k">def</span> <span class="nf">multilink</span><span class="p">(</span><span class="n">link_list</span><span class="p">):</span>
+<div class="viewcode-block" id="multilink"><a class="viewcode-back" href="../../../../diskpy.clumps.clumpfinding.html#diskpy.clumps.clumpfinding.multilink">[docs]</a><span class="k">def</span> <span class="nf">multilink</span><span class="p">(</span><span class="n">link_list</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Links clumps on multiple time steps.</span>
 <span class="sd">    </span>
@@ -343,7 +343,7 @@
     
     <span class="k">return</span> <span class="n">link2</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
     
-<div class="viewcode-block" id="pLink2"><a class="viewcode-back" href="../../../pydisk.clumps.html#pydisk.clumps.pLink2">[docs]</a><span class="k">def</span> <span class="nf">pLink2</span><span class="p">(</span><span class="n">clump_pars_list</span><span class="p">):</span>
+<div class="viewcode-block" id="pLink2"><a class="viewcode-back" href="../../../../diskpy.clumps.clumpfinding.html#diskpy.clumps.clumpfinding.pLink2">[docs]</a><span class="k">def</span> <span class="nf">pLink2</span><span class="p">(</span><span class="n">clump_pars_list</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A parallel (batch) implementation of links2 for linking clumps in</span>
 <span class="sd">    consecutive time-steps.  </span>
@@ -373,7 +373,7 @@
     
     <span class="k">return</span> <span class="n">link_list</span>
 </div>
-<div class="viewcode-block" id="link2"><a class="viewcode-back" href="../../../pydisk.clumps.html#pydisk.clumps.link2">[docs]</a><span class="k">def</span> <span class="nf">link2</span><span class="p">(</span><span class="n">clump_pars1</span><span class="p">,</span> <span class="n">clump_pars2</span><span class="p">,</span> <span class="n">link_thresh</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">):</span>
+<div class="viewcode-block" id="link2"><a class="viewcode-back" href="../../../../diskpy.clumps.clumpfinding.html#diskpy.clumps.clumpfinding.link2">[docs]</a><span class="k">def</span> <span class="nf">link2</span><span class="p">(</span><span class="n">clump_pars1</span><span class="p">,</span> <span class="n">clump_pars2</span><span class="p">,</span> <span class="n">link_thresh</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    &#39;Links&#39; the clumps in two consecutive timesteps.  i.e., a clump numbered</span>
 <span class="sd">    10 in one time step might be numbered 15 in the next.  Requires the particle</span>
@@ -482,7 +482,7 @@
     <span class="k">return</span> <span class="n">clump_pairs</span>
         
 </div>
-<div class="viewcode-block" id="clump_im"><a class="viewcode-back" href="../../../pydisk.clumps.html#pydisk.clumps.clump_im">[docs]</a><span class="k">def</span> <span class="nf">clump_im</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">clump_array</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">qty</span><span class="o">=</span><span class="s">&#39;rho&#39;</span><span class="p">,</span> <span class="n">resolution</span><span class="o">=</span><span class="mi">1200</span><span class="p">,</span> <span class="n">clim</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">clump_min</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="clump_im"><a class="viewcode-back" href="../../../../diskpy.clumps.clumpfinding.html#diskpy.clumps.clumpfinding.clump_im">[docs]</a><span class="k">def</span> <span class="nf">clump_im</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">clump_array</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">qty</span><span class="o">=</span><span class="s">&#39;rho&#39;</span><span class="p">,</span> <span class="n">resolution</span><span class="o">=</span><span class="mi">1200</span><span class="p">,</span> <span class="n">clim</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">clump_min</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Plots an sph image from f with particles not in clumps colored red and </span>
 <span class="sd">    particles in clumps colored green.  Uses pynbody for a backend.</span>
@@ -606,7 +606,7 @@
     
     <span class="k">return</span> <span class="n">clump_properties</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
     
-<div class="viewcode-block" id="pClump_properties"><a class="viewcode-back" href="../../../pydisk.clumps.html#pydisk.clumps.pClump_properties">[docs]</a><span class="k">def</span> <span class="nf">pClump_properties</span><span class="p">(</span><span class="n">flist</span><span class="p">,</span> <span class="n">clumpnum_list</span><span class="p">):</span>
+<div class="viewcode-block" id="pClump_properties"><a class="viewcode-back" href="../../../../diskpy.clumps.clumpfinding.html#diskpy.clumps.clumpfinding.pClump_properties">[docs]</a><span class="k">def</span> <span class="nf">pClump_properties</span><span class="p">(</span><span class="n">flist</span><span class="p">,</span> <span class="n">clumpnum_list</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A parallel (batch) implementation of clump_properties.  Calculates the </span>
 <span class="sd">    physical properties of clumps in a list of snapshots.</span>
@@ -638,7 +638,7 @@
     
     <span class="k">return</span> <span class="n">properties</span>
 </div>
-<div class="viewcode-block" id="clump_properties"><a class="viewcode-back" href="../../../pydisk.clumps.html#pydisk.clumps.clump_properties">[docs]</a><span class="k">def</span> <span class="nf">clump_properties</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">clump_nums</span><span class="p">):</span>
+<div class="viewcode-block" id="clump_properties"><a class="viewcode-back" href="../../../../diskpy.clumps.clumpfinding.html#diskpy.clumps.clumpfinding.clump_properties">[docs]</a><span class="k">def</span> <span class="nf">clump_properties</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">clump_nums</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculates the physical properties of clumps in a snapshot.</span>
 <span class="sd">    </span>
@@ -786,7 +786,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>    
     <span class="k">return</span> <span class="n">find_clumps</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
     
-<div class="viewcode-block" id="pFind_clumps"><a class="viewcode-back" href="../../../pydisk.clumps.html#pydisk.clumps.pFind_clumps">[docs]</a><span class="k">def</span> <span class="nf">pFind_clumps</span><span class="p">(</span><span class="n">f_list</span><span class="p">,</span> <span class="n">n_smooth</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">param</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">arg_string</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+<div class="viewcode-block" id="pFind_clumps"><a class="viewcode-back" href="../../../../diskpy.clumps.clumpfinding.html#diskpy.clumps.clumpfinding.pFind_clumps">[docs]</a><span class="k">def</span> <span class="nf">pFind_clumps</span><span class="p">(</span><span class="n">f_list</span><span class="p">,</span> <span class="n">n_smooth</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">param</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">arg_string</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A parallel implementation of find_clumps.  Since SKID is not parallelized</span>
 <span class="sd">    this can be used to run find_clumps on a set of snapshots from one</span>
@@ -837,7 +837,7 @@
     
     <span class="k">return</span> <span class="n">results</span>
 </div>
-<div class="viewcode-block" id="find_clumps"><a class="viewcode-back" href="../../../pydisk.clumps.html#pydisk.clumps.find_clumps">[docs]</a><span class="k">def</span> <span class="nf">find_clumps</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">n_smooth</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">param</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">arg_string</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+<div class="viewcode-block" id="find_clumps"><a class="viewcode-back" href="../../../../diskpy.clumps.clumpfinding.html#diskpy.clumps.clumpfinding.find_clumps">[docs]</a><span class="k">def</span> <span class="nf">find_clumps</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">n_smooth</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">param</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">arg_string</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Uses skid (https://github.com/N-BodyShop/skid) to find clumps in a gaseous</span>
 <span class="sd">    protoplanetary disk.  </span>
@@ -956,7 +956,7 @@
         <div class="sphinxsidebarwrapper">
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
-    <form class="search" action="../../../search.html" method="get">
+    <form class="search" action="../../../../search.html" method="get">
       <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
@@ -975,13 +975,13 @@
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="../../../genindex.html" title="General Index"
+          <a href="../../../../genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="../../../py-modindex.html" title="Python Module Index"
+          <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">diskpy  documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">diskpy  documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

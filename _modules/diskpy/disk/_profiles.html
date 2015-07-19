@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pydisk.disk._profiles &mdash; diskpy  documentation</title>
+    <title>diskpy.disk._profiles &mdash; diskpy  documentation</title>
     
     <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -47,7 +47,7 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <h1>Source code for pydisk.disk._profiles</h1><div class="highlight"><pre>
+  <h1>Source code for diskpy.disk._profiles</h1><div class="highlight"><pre>
 <span class="c"># -*- coding: utf-8 -*-</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Created on Thu Jul 16 15:42:56 2015</span>
@@ -59,10 +59,10 @@
 <span class="n">SimArray</span> <span class="o">=</span> <span class="n">pb</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">SimArray</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pydisk.utils</span> <span class="kn">import</span> <span class="n">match_units</span>
-<span class="kn">from</span> <span class="nn">pydisk.pdmath</span> <span class="kn">import</span> <span class="n">binned_mean</span>
+<span class="kn">from</span> <span class="nn">diskpy.utils</span> <span class="kn">import</span> <span class="n">match_units</span>
+<span class="kn">from</span> <span class="nn">diskpy.pdmath</span> <span class="kn">import</span> <span class="n">binned_mean</span>
 
-<div class="viewcode-block" id="Q"><a class="viewcode-back" href="../../../pydisk.disk.html#pydisk.disk.Q">[docs]</a><span class="k">def</span> <span class="nf">Q</span><span class="p">(</span><span class="n">snapshot</span><span class="p">,</span> <span class="n">molecular_mass</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">use_velocity</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> \
+<div class="viewcode-block" id="Q"><a class="viewcode-back" href="../../../diskpy.disk.html#diskpy.disk.Q">[docs]</a><span class="k">def</span> <span class="nf">Q</span><span class="p">(</span><span class="n">snapshot</span><span class="p">,</span> <span class="n">molecular_mass</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">use_velocity</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> \
 <span class="n">use_omega</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Calculates the Toomre Q as a function of r, assuming radial temperature</span>
 <span class="sd">    profile and kappa ~= omega</span>
@@ -130,7 +130,7 @@
 
     <span class="k">return</span> <span class="p">(</span><span class="n">kappa_calc</span><span class="o">*</span><span class="n">c_s</span><span class="o">/</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">G</span><span class="o">*</span><span class="n">sig</span><span class="p">))</span><span class="o">.</span><span class="n">in_units</span><span class="p">(</span><span class="s">&#39;1&#39;</span><span class="p">),</span> <span class="n">r_edges</span>
 </div>
-<div class="viewcode-block" id="Qeff"><a class="viewcode-back" href="../../../pydisk.disk.html#pydisk.disk.Qeff">[docs]</a><span class="k">def</span> <span class="nf">Qeff</span><span class="p">(</span><span class="n">snapshot</span><span class="p">,</span> <span class="n">molecular_mass</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">use_velocity</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> \
+<div class="viewcode-block" id="Qeff"><a class="viewcode-back" href="../../../diskpy.disk.html#diskpy.disk.Qeff">[docs]</a><span class="k">def</span> <span class="nf">Qeff</span><span class="p">(</span><span class="n">snapshot</span><span class="p">,</span> <span class="n">molecular_mass</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">use_velocity</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> \
 <span class="n">use_omega</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.18</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">2.2</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Estimates the effective Toomre Q as a function of r, defined as:</span>
 <span class="sd">    </span>
@@ -173,7 +173,7 @@
 
     <span class="k">return</span> <span class="n">Qeff</span><span class="p">,</span> <span class="n">r_edges</span>
     </div>
-<div class="viewcode-block" id="kappa"><a class="viewcode-back" href="../../../pydisk.disk.html#pydisk.disk.kappa">[docs]</a><span class="k">def</span> <span class="nf">kappa</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+<div class="viewcode-block" id="kappa"><a class="viewcode-back" href="../../../diskpy.disk.html#diskpy.disk.kappa">[docs]</a><span class="k">def</span> <span class="nf">kappa</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Estimate the epicyclic frequency from velocity</span>
 <span class="sd">    </span>
 <span class="sd">    Parameters</span>
@@ -216,7 +216,7 @@
 
     <span class="k">return</span> <span class="n">kappa</span><span class="p">,</span> <span class="n">r_edges</span>
     </div>
-<div class="viewcode-block" id="height"><a class="viewcode-back" href="../../../pydisk.disk.html#pydisk.disk.height">[docs]</a><span class="k">def</span> <span class="nf">height</span><span class="p">(</span><span class="n">snapshot</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">center_on_star</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+<div class="viewcode-block" id="height"><a class="viewcode-back" href="../../../diskpy.disk.html#diskpy.disk.height">[docs]</a><span class="k">def</span> <span class="nf">height</span><span class="p">(</span><span class="n">snapshot</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">center_on_star</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Calculates the characteristic height (h) of a flared disk as a function</span>
 <span class="sd">    of cylindrical radius (r).</span>
@@ -262,7 +262,7 @@
 
     <span class="k">return</span> <span class="n">r_edges</span><span class="p">,</span> <span class="n">h</span>
     </div>
-<div class="viewcode-block" id="sigma"><a class="viewcode-back" href="../../../pydisk.disk.html#pydisk.disk.sigma">[docs]</a><span class="k">def</span> <span class="nf">sigma</span><span class="p">(</span><span class="n">snapshot</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+<div class="viewcode-block" id="sigma"><a class="viewcode-back" href="../../../diskpy.disk.html#diskpy.disk.sigma">[docs]</a><span class="k">def</span> <span class="nf">sigma</span><span class="p">(</span><span class="n">snapshot</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Calculates surface density vs r (relative to the center of mass)</span>
 <span class="sd">    </span>
 <span class="sd">    Parameters</span>

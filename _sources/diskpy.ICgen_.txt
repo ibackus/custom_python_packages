@@ -1,0 +1,10 @@
+diskpy.ICgen_ package
+=====================
+
+Module contents
+---------------
+
+.. automodule:: diskpy.ICgen_
+    :members:
+    :undoc-members:
+    :show-inheritance:
